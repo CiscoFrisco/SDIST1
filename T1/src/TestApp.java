@@ -1,4 +1,5 @@
-import java.util.Arrays;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 class TestApp {
 
@@ -16,14 +17,6 @@ class TestApp {
     public static boolean validateArguments(String[] args) {
         if (args.length < 2 || args.length > 4) {
             System.err.println("ERROR: Invalid number of arguments!");
-            printUsage();
-            return false;
-        }
-
-        try {
-            Integer.parseInt(args[0]);
-        } catch (Exception e) {
-            System.err.println("ERROR: Could not parse peer_ap!");
             printUsage();
             return false;
         }
@@ -90,5 +83,23 @@ class TestApp {
     public static void main(String[] args) {
         if(!validateArguments(args))
             return;
+ 
+        String remote_object_name = args[0];
+    
+        try {
+            Registry registry = LocateRegistry.getRegistry("localhost");
+            RemoteInterface stub = (RemoteInterface) registry.lookup(remote_object_name);
+            String response = "";
+            
+            if(args[1].equals("BACKUP")) {
+                response = stub.backup(args[2], Integer.parseInt(args[3]));
+            }
+            
+            System.out.println("response: " + response);
+
+        } catch (Exception e) {
+            System.err.println("Client exception: " + e.toString());
+            e.printStackTrace();
+        }
     }
 }
