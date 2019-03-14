@@ -1,17 +1,29 @@
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.rmi.RemoteException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
 public class Peer implements RemoteInterface {
 
 	public static void main(String[] args) {
-		
+
 		// if(args.length != 9){
-		// 	System.err.println("Usage: java Peer <protocol_version> <server_id> <remote_object_name> <MCaddress> <MCport> <MDBaddress> <MDBport> <MDRaddress> <MDRport>");
-		// 	System.exit(1);
+		// System.err.println("Usage: java Peer <protocol_version> <server_id>
+		// <remote_object_name> <MCaddress> <MCport> <MDBaddress> <MDBport> <MDRaddress>
+		// <MDRport>");
+		// System.exit(1);
 		// }
 
 		String remote_object_name = args[2];
@@ -21,7 +33,7 @@ public class Peer implements RemoteInterface {
 			RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(obj, 0);
 
 			// Bind the remote object's stub in the registry
-            Naming.rebind(remote_object_name, stub);
+			Naming.rebind(remote_object_name, stub);
 
 			System.err.println("Peer ready");
 		} catch (Exception e) {
@@ -29,6 +41,41 @@ public class Peer implements RemoteInterface {
 			e.printStackTrace();
 		}
 
+	}
+
+	public static void splitFile(File f) throws IOException {
+		int partCounter = 1;// I like to name parts from 001, 002, 003, ...
+							// you can change it to 0 if you want 000, 001, ...
+
+		int sizeOfFiles = 64 * 1000;// 64KByte
+		byte[] buffer = new byte[sizeOfFiles];
+		String fileName = f.getName();
+
+		Path file = Paths.get(fileName);
+		BasicFileAttributes attr = Files.readAttributes(file, BasicFileAttributes.class);
+
+		String dateModified = attr.lastModifiedTime().toString();
+		String owner = Files.getOwner(file).getName();
+		String fileId = encryptFileId(fileName, dateModified, owner);
+		int chunkNo = 0;
+
+		// try-with-resources to ensure closing stream
+		try (FileInputStream fis = new FileInputStream(f); BufferedInputStream bis = new BufferedInputStream(fis)) {
+
+			ArrayList<Chunk> chunks = new ArrayList<Chunk>();
+			int bytesAmount = 0;
+			while ((bytesAmount = bis.read(buffer)) > 0) {
+				// write each chunk of data into separate file with different number in name
+				String filePartName = String.format("%s.%03d", fileName, partCounter++);
+				File newFile = new File(f.getParent(), filePartName);
+				try (FileOutputStream out = new FileOutputStream(newFile)) {
+					out.write(buffer, 0, bytesAmount);
+				}
+
+				chunks.add(new Chunk(fileId, chunkNo, buffer, bytesAmount));
+				chunkNo++;
+			}
+		}
 	}
 
 	public static String encryptFileId(String fileName, String dateModified, String owner) {
