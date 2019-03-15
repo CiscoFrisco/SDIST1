@@ -15,7 +15,27 @@ import java.util.ArrayList;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 public class Peer implements RemoteInterface {
+	
+	private ControlChannel MC;
+	private BackupChannel MDB;
+	private ScheduledThreadPoolExecutor scheduler;
+	
+	public ScheduledThreadPoolExecutor getScheduler() {
+		return scheduler;
+	}
+
+	public Peer(String MCaddress, String MCport, String MDBaddress, String MDBport) throws IOException {
+		this.MC = new ControlChannel(MCport, MCaddress);
+		this.MDB = new BackupChannel(MDBport, MDBaddress);
+
+		this.scheduler = (ScheduledThreadPoolExecutor)Executors.newScheduledThreadPool(1);
+	}
 
 	public static void main(String[] args) {
 
@@ -27,9 +47,13 @@ public class Peer implements RemoteInterface {
 		// }
 
 		String remote_object_name = args[2];
+		String MCaddress = args[3];
+		String MCport = args[4];
+		String MDBaddress = args[5];
+		String MDBport = args[6];
 
 		try {
-			Peer obj = new Peer();
+			Peer obj = new Peer(MCaddress, MCport, MDBaddress, MDBport);
 			RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(obj, 0);
 
 			// Bind the remote object's stub in the registry
@@ -116,6 +140,8 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String backup(String fileName, int replicationDegree) throws RemoteException {
+		
+		
 		return "sup";
 	}
 
