@@ -21,30 +21,32 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class Peer implements RemoteInterface {
-	
-	private int PeerID;
+
+	private int peerID;
 	private static ControlChannel MC;
 	private static BackupChannel MDB;
 	private static ScheduledThreadPoolExecutor scheduler;
-	
+	private Storage storage;
+
 	public static ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
 	}
-	
+
 	public static ControlChannel getMC() {
 		return MC;
 	}
-	
+
 	public static BackupChannel getMDB() {
 		return MDB;
 	}
 
-	public Peer(int PeerID, String MCaddress, String MCport, String MDBaddress, String MDBport) throws IOException {
-		this.PeerID = PeerID;
+	public Peer(int peerID, String MCaddress, String MCport, String MDBaddress, String MDBport) throws IOException {
+		this.peerID = peerID;
 		this.MC = new ControlChannel(MCport, MCaddress);
 		this.MDB = new BackupChannel(MDBport, MDBaddress);
 
-		this.scheduler = (ScheduledThreadPoolExecutor)Executors.newScheduledThreadPool(1);
+		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1);
+		this.storage = new Storage(this.peerID);
 	}
 
 	public static void main(String[] args) {
@@ -77,97 +79,26 @@ public class Peer implements RemoteInterface {
 
 	}
 
-	public static ArrayList<Chunk> splitFile(File f) throws IOException {
-		int partCounter = 1;// I like to name parts from 001, 002, 003, ...
-							// you can change it to 0 if you want 000, 001, ...
-
-		int sizeOfFiles = 64 * 1000;// 64KByte
-		byte[] buffer = new byte[sizeOfFiles];
-		String fileName = f.getName();
-
-		Path file = Paths.get(fileName);
-		BasicFileAttributes attr = Files.readAttributes(file, BasicFileAttributes.class);
-
-		String dateModified = attr.lastModifiedTime().toString();
-		String owner = Files.getOwner(file).getName();
-		String fileId = encryptFileId(fileName, dateModified, owner);
-		int chunkNo = 0;
-		
-		ArrayList<Chunk> chunks = new ArrayList<Chunk>();
-		// try-with-resources to ensure closing stream
-		try (FileInputStream fis = new FileInputStream(f); BufferedInputStream bis = new BufferedInputStream(fis)) {
-
-			
-			int bytesAmount = 0;
-			while ((bytesAmount = bis.read(buffer)) > 0) {
-				// write each chunk of data into separate file with different number in name
-				String filePartName = String.format("%s.%03d", fileName, partCounter++);
-				File newFile = new File(f.getParent(), filePartName);
-				try (FileOutputStream out = new FileOutputStream(newFile)) {
-					out.write(buffer, 0, bytesAmount);
-				}
-
-				chunks.add(new Chunk(fileId, chunkNo, buffer, bytesAmount));
-				chunkNo++;
-			}
-		}
-		return chunks;
-	}
-
-	public static String encryptFileId(String fileName, String dateModified, String owner) {
-		return getSHA(fileName + "-" + dateModified + "-" + owner);
-	}
-
-	public static String getSHA(String input) {
-		try {
-
-			// Static getInstance method is called with hashing SHA
-			MessageDigest md = MessageDigest.getInstance("SHA-256");
-
-			// digest() method called
-			// to calculate message digest of an input
-			// and return array of byte
-			byte[] messageDigest = md.digest(input.getBytes());
-
-			// Convert byte array into signum representation
-			BigInteger no = new BigInteger(1, messageDigest);
-
-			// Convert message digest into hex value
-			String hashtext = no.toString(16);
-
-			while (hashtext.length() < 32) {
-				hashtext = "0" + hashtext;
-			}
-
-			return hashtext;
-		}
-
-		// For specifying wrong message digest algorithms
-		catch (NoSuchAlgorithmException e) {
-			System.out.println("Exception thrown" + " for incorrect algorithm: " + e);
-
-			return null;
-		}
-	}
-
 	@Override
 	public String backup(String fileName, int replicationDegree) {
-		
-		File file = new File(fileName);
-		
+
+		StoredFile file = new StoredFile(fileName);
+		this.storage.addFile(file);
+
+		ArrayList<Chunk> chunks = new ArrayList<Chunk>();
+
 		try {
-			ArrayList<Chunk> chunks = splitFile(file);
-			
-			for(int i = 0; i < chunks.size();i++) {
-				String chunk_msg = buildChunkMsg("PUTCHUNK", chunks.get(i), replicationDegree);
-				this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB"));
-			}
-			
-			
+			chunks = file.splitFile();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		for (int i = 0; i < chunks.size(); i++) {
+			String chunk_msg = buildPutChunkMessage("1.0", this.peerID, file.getFileId(), i, replicationDegree, chunks.get(i));
+			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB"));
+		}
+
 		return "sup";
 	}
 
@@ -190,12 +121,51 @@ public class Peer implements RemoteInterface {
 	public String state() throws RemoteException {
 		return null;
 	}
-	
+
 	public String buildChunkMsg(String Action, Chunk chunk, int replicationDegree) {
-		
-		String chunk_msg = Action + " " + this.PeerID + " " + chunk.getFileId() + " " + chunk.getChunkNo()
-		      + " " + Integer.toString(replicationDegree) + " \r\n " + chunk.getBuffer(); 
-		
-		return chunk_msg;	
+
+		String chunk_msg = Action + " " + this.peerID + " " + chunk.getFileId() + " " + chunk.getChunkNo() + " "
+				+ Integer.toString(replicationDegree) + " \r\n " + chunk.getBuffer();
+
+		return chunk_msg;
+	}
+
+	public String fileIdToAscii(String fileId){
+
+		String hex = "";
+		for(int i = 0; i < fileId.length(); i++){
+			hex.concat(String.format("%04x", (int) fileId.charAt(i)));
+		}
+
+		byte[] bytes = hex.getBytes();
+
+		StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+	}
+
+	public String numberToAscii(int number){
+
+		int digit = 0;
+		String ascii = "";
+
+		while(number > 0) {
+			digit = number % 10;
+			digit += 48;
+			ascii.concat(Integer.toString(digit));
+			number /= 10;
+		}
+
+		return ascii;
+	}
+
+	public String buildPutChunkMessage(String version, int senderId, String fileId, int chunkNo, int replicationDegree, Chunk chunk){
+		return "PUTCHUNK " + version + " " + numberToAscii(senderId) + " " + fileIdToAscii(fileId) + " " + numberToAscii(chunkNo) + " " + numberToAscii(replicationDegree) + "\r\n" + chunk.getBuffer();
+	}
+
+	public String buildStoredMessage(String version, int senderId, String fileId, int chunkNo){
+		return "STORED" + version + " " + numberToAscii(senderId) + " " + fileIdToAscii(fileId) + " " + numberToAscii(chunkNo);
 	}
 }

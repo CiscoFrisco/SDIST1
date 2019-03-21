@@ -15,28 +15,26 @@ public class BackupChannel extends Channel {
 
 	@Override
 	public void run() {
-		
+
 		MulticastSocket Msocket;
 		try {
 			Msocket = new MulticastSocket(this.port);
 			Msocket.joinGroup(address);
 
-			byte[] buf = new byte[256];
+			byte[] buf = new byte[65 * 1000];
 
-			while(true){
+			while (true) {
 				DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
 				Msocket.receive(msgPacket);
-				
-				
-				System.out.println("HEEEY" + msgPacket);
+
+				Peer.getScheduler().execute(new MessageReceiverThread(msgPacket.getData().toString()));
 			}
-			//Get advertisement
-			
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	
+
 	}
 
 }

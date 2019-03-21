@@ -9,8 +9,11 @@ public class MessageReceiverThread implements Runnable {
 
 	@Override
 	public void run() {
-		String messageType = message.substring(0, message.indexOf(' '));
 
+		System.out.println(message);
+
+		String messageType = message.substring(0, message.indexOf(' '));
+		
 		switch(messageType) {
 		case "PUTCHUNK":
 			Peer.getScheduler().execute(new ReceivePutChunkThread(this.message));
