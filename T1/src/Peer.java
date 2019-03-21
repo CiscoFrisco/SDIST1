@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Peer implements RemoteInterface {
 	
+	private int PeerID;
 	private ControlChannel MC;
 	private BackupChannel MDB;
 	private ScheduledThreadPoolExecutor scheduler;
@@ -30,7 +31,8 @@ public class Peer implements RemoteInterface {
 		return scheduler;
 	}
 
-	public Peer(String MCaddress, String MCport, String MDBaddress, String MDBport) throws IOException {
+	public Peer(int PeerID, String MCaddress, String MCport, String MDBaddress, String MDBport) throws IOException {
+		this.PeerID = PeerID;
 		this.MC = new ControlChannel(MCport, MCaddress);
 		this.MDB = new BackupChannel(MDBport, MDBaddress);
 
@@ -45,7 +47,7 @@ public class Peer implements RemoteInterface {
 		// <MDRport>");
 		// System.exit(1);
 		// }
-
+		int peer_id = Integer.parseInt(args[1]);
 		String remote_object_name = args[2];
 		String MCaddress = args[3];
 		String MCport = args[4];
@@ -53,7 +55,7 @@ public class Peer implements RemoteInterface {
 		String MDBport = args[6];
 
 		try {
-			Peer obj = new Peer(MCaddress, MCport, MDBaddress, MDBport);
+			Peer obj = new Peer(peer_id, MCaddress, MCport, MDBaddress, MDBport);
 			RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(obj, 0);
 
 			// Bind the remote object's stub in the registry
@@ -67,7 +69,7 @@ public class Peer implements RemoteInterface {
 
 	}
 
-	public static void splitFile(File f) throws IOException {
+	public static ArrayList<Chunk> splitFile(File f) throws IOException {
 		int partCounter = 1;// I like to name parts from 001, 002, 003, ...
 							// you can change it to 0 if you want 000, 001, ...
 
@@ -82,11 +84,12 @@ public class Peer implements RemoteInterface {
 		String owner = Files.getOwner(file).getName();
 		String fileId = encryptFileId(fileName, dateModified, owner);
 		int chunkNo = 0;
-
+		
+		ArrayList<Chunk> chunks = new ArrayList<Chunk>();
 		// try-with-resources to ensure closing stream
 		try (FileInputStream fis = new FileInputStream(f); BufferedInputStream bis = new BufferedInputStream(fis)) {
 
-			ArrayList<Chunk> chunks = new ArrayList<Chunk>();
+			
 			int bytesAmount = 0;
 			while ((bytesAmount = bis.read(buffer)) > 0) {
 				// write each chunk of data into separate file with different number in name
@@ -100,6 +103,7 @@ public class Peer implements RemoteInterface {
 				chunkNo++;
 			}
 		}
+		return chunks;
 	}
 
 	public static String encryptFileId(String fileName, String dateModified, String owner) {
@@ -139,9 +143,24 @@ public class Peer implements RemoteInterface {
 	}
 
 	@Override
-	public String backup(String fileName, int replicationDegree) throws RemoteException {
+	public String backup(String fileName, int replicationDegree) {
 		
+		File file = new File(fileName);
 		
+		try {
+			ArrayList<Chunk> chunks = splitFile(file);
+			
+			for(int i = 0; i < chunks.size();i++) {
+				String chunk_msg = buildChunkMsg("PUTCHUNK", chunks.get(i), replicationDegree);
+				
+				this.MDB.sendMessage(chunk_msg);
+			}
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return "sup";
 	}
 
@@ -163,5 +182,13 @@ public class Peer implements RemoteInterface {
 	@Override
 	public String state() throws RemoteException {
 		return null;
+	}
+	
+	public String buildChunkMsg(String Action, Chunk chunk, int replicationDegree) {
+		
+		String chunk_msg = Action + " " + this.PeerID + " " + chunk.getFileId() + " " + chunk.getChunkNo()
+		      + " " + Integer.toString(replicationDegree) + " \r\n " + chunk.getBuffer(); 
+		
+		return chunk_msg;	
 	}
 }

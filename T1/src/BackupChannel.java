@@ -45,6 +45,9 @@ public class BackupChannel implements Runnable {
 			while(true){
 				DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
 				Msocket.receive(msgPacket);
+				
+				
+				System.out.println("HEEEY" + msgPacket);
 			}
 			//Get advertisement
 			
