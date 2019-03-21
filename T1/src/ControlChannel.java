@@ -4,28 +4,15 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 
-public class ControlChannel implements Runnable {
+public class ControlChannel extends Channel {
 
 	private InetAddress address;
 	private int port;
 
 	public ControlChannel(String IPaddress, String port) throws IOException {
-
-			this.address = InetAddress.getByName(IPaddress);
-			this.port = Integer.parseInt(port);
+		super(IPaddress, port);
 	}
-	
-	public void sendMessage(String msg) {
-		try {
-			DatagramSocket socket = new DatagramSocket();
-			DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, address, port);
 
-			socket.send(msgPacket);
-			socket.close();
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}     
-	}
 
 	@Override
 	public void run() {

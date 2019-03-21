@@ -4,32 +4,13 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 
-public class BackupChannel implements Runnable {
+public class BackupChannel extends Channel {
 
 	private InetAddress address;
 	private int port;
 
 	public BackupChannel(String IPaddress, String port) throws IOException {
-
-		try {
-			this.address = InetAddress.getByName(IPaddress);
-			this.port = Integer.parseInt(port);
-		}
-		catch (IOException ex) {
-				ex.printStackTrace();
-		}
-	}
-	
-	public void sendMessage(String msg) {
-		try {
-			DatagramSocket socket = new DatagramSocket();
-			DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, address, port);
-
-			socket.send(msgPacket);
-			socket.close();
-		} catch (IOException ex) {
-			ex.printStackTrace();
-		}     
+		super(IPaddress, port);
 	}
 
 	@Override

@@ -1,19 +1,16 @@
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class RestoreChannel implements Runnable {
+public class RestoreChannel extends Channel {
 
     private InetAddress address;
     private int port;
 
     public RestoreChannel(String IPaddress, String port) {
-        try {
-            this.address = InetAddress.getByName(IPaddress);
-            this.port = Integer.parseInt(port);
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+       super(IPaddress, port);
     }
 
     @Override

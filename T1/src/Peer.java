@@ -23,12 +23,20 @@ import java.util.concurrent.TimeUnit;
 public class Peer implements RemoteInterface {
 	
 	private int PeerID;
-	private ControlChannel MC;
-	private BackupChannel MDB;
-	private ScheduledThreadPoolExecutor scheduler;
+	private static ControlChannel MC;
+	private static BackupChannel MDB;
+	private static ScheduledThreadPoolExecutor scheduler;
 	
-	public ScheduledThreadPoolExecutor getScheduler() {
+	public static ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
+	}
+	
+	public static ControlChannel getMC() {
+		return MC;
+	}
+	
+	public static BackupChannel getMDB() {
+		return MDB;
 	}
 
 	public Peer(int PeerID, String MCaddress, String MCport, String MDBaddress, String MDBport) throws IOException {
@@ -152,8 +160,7 @@ public class Peer implements RemoteInterface {
 			
 			for(int i = 0; i < chunks.size();i++) {
 				String chunk_msg = buildChunkMsg("PUTCHUNK", chunks.get(i), replicationDegree);
-				
-				this.MDB.sendMessage(chunk_msg);
+				this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB"));
 			}
 			
 			
