@@ -11,6 +11,7 @@ public class MessageSenderThread implements Runnable {
 	@Override
 	public void run() {
 		System.out.println("fdsss");
+		System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 		switch(this.channel) {
 		case "MC":
 			Peer.getMC().sendMessage(this.message);

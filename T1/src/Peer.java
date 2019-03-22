@@ -51,7 +51,7 @@ public class Peer implements RemoteInterface {
 		this.MDB = new BackupChannel(MDBaddress, MDBport);
 		this.MDR = new RestoreChannel(MDRaddress, MDRport);
 
-		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1);
+		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
 		this.storage = new Storage(this.peerID);
 
 		this.scheduler.execute(this.MC);
@@ -102,6 +102,7 @@ public class Peer implements RemoteInterface {
 			String chunk_msg = buildPutChunkMessage(this.protocol_version, this.peerID, file.getFileId(), i, replicationDegree, chunks.get(i));
 			System.out.println(chunk_msg);
 			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB"));
+			System.out.println("WUT");
 		}
 
 		return "sup";
@@ -142,11 +143,6 @@ public class Peer implements RemoteInterface {
 		String file =  Utils.fileIdToAscii(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String rep = Utils.numberToAscii(replicationDegree);
-
-		System.out.println(sender);
-		System.out.println(file);
-		System.out.println(chunkN);
-		System.out.println(rep);
 
 		return "PUTCHUNK " + version + " " + sender + " " + file + " " + chunkN + " " + rep + " \r\n\r\n" + chunk.getBuffer();
 	}
