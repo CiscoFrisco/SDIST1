@@ -3,14 +3,14 @@ public class MessageSenderThread implements Runnable {
 	private String message;
 	private String channel;
 	
-	MessageSenderThread(String message, String channel){
+	public MessageSenderThread(String message, String channel){
 		this.message = message;
 		this.channel = channel;
 	}
 
 	@Override
 	public void run() {
-		
+		System.out.println("fdsss");
 		switch(this.channel) {
 		case "MC":
 			Peer.getMC().sendMessage(this.message);

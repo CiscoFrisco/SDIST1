@@ -23,10 +23,14 @@ import java.util.concurrent.TimeUnit;
 public class Peer implements RemoteInterface {
 
 	private int peerID;
+
 	private static ControlChannel MC;
 	private static BackupChannel MDB;
+	private static RestoreChannel MDR;
+
 	private static ScheduledThreadPoolExecutor scheduler;
 	private Storage storage;
+	private String protocol_version;
 
 	public static ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
@@ -40,32 +44,32 @@ public class Peer implements RemoteInterface {
 		return MDB;
 	}
 
-	public Peer(int peerID, String MCaddress, String MCport, String MDBaddress, String MDBport) throws IOException {
+	public Peer(String protocol_version, int peerID, String MCaddress, String MCport, String MDBaddress, String MDBport, String MDRaddress, String MDRport) throws IOException {
+		this.protocol_version = protocol_version;
 		this.peerID = peerID;
-		this.MC = new ControlChannel(MCport, MCaddress);
-		this.MDB = new BackupChannel(MDBport, MDBaddress);
+		this.MC = new ControlChannel(MCaddress, MCport);
+		this.MDB = new BackupChannel(MDBaddress, MDBport);
+		this.MDR = new RestoreChannel(MDRaddress, MDRport);
 
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1);
 		this.storage = new Storage(this.peerID);
+
+		this.scheduler.execute(this.MC);
+		this.scheduler.execute(this.MDB);
+		this.scheduler.execute(this.MDR);
 	}
 
 	public static void main(String[] args) {
 
-		// if(args.length != 9){
-		// System.err.println("Usage: java Peer <protocol_version> <server_id>
-		// <remote_object_name> <MCaddress> <MCport> <MDBaddress> <MDBport> <MDRaddress>
-		// <MDRport>");
-		// System.exit(1);
-		// }
-		int peer_id = Integer.parseInt(args[1]);
+		if(args.length != 9){
+			System.err.println("Usage: java Peer <protocol_version> <server_id> <remote_object_name> <MCaddress> <MCport> <MDBaddress> <MDBport> <MDRaddress> <MDRport>");
+			System.exit(1);
+		}
+
 		String remote_object_name = args[2];
-		String MCaddress = args[3];
-		String MCport = args[4];
-		String MDBaddress = args[5];
-		String MDBport = args[6];
 
 		try {
-			Peer obj = new Peer(peer_id, MCaddress, MCport, MDBaddress, MDBport);
+			Peer obj = new Peer(args[0], Integer.parseInt(args[1]), args[3], args[4], args[5], args[6], args[7], args[8]);
 			RemoteInterface stub = (RemoteInterface) UnicastRemoteObject.exportObject(obj, 0);
 
 			// Bind the remote object's stub in the registry
@@ -95,7 +99,8 @@ public class Peer implements RemoteInterface {
 		}
 
 		for (int i = 0; i < chunks.size(); i++) {
-			String chunk_msg = buildPutChunkMessage("1.0", this.peerID, file.getFileId(), i, replicationDegree, chunks.get(i));
+			String chunk_msg = buildPutChunkMessage(this.protocol_version, this.peerID, file.getFileId(), i, replicationDegree, chunks.get(i));
+			System.out.println(chunk_msg);
 			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB"));
 		}
 
@@ -130,42 +135,56 @@ public class Peer implements RemoteInterface {
 		return chunk_msg;
 	}
 
-	public String fileIdToAscii(String fileId){
-
-		String hex = "";
-		for(int i = 0; i < fileId.length(); i++){
-			hex.concat(String.format("%04x", (int) fileId.charAt(i)));
-		}
-
-		byte[] bytes = hex.getBytes();
-
-		StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-	}
-
-	public String numberToAscii(int number){
-
-		int digit = 0;
-		String ascii = "";
-
-		while(number > 0) {
-			digit = number % 10;
-			digit += 48;
-			ascii.concat(Integer.toString(digit));
-			number /= 10;
-		}
-
-		return ascii;
-	}
 
 	public String buildPutChunkMessage(String version, int senderId, String fileId, int chunkNo, int replicationDegree, Chunk chunk){
-		return "PUTCHUNK " + version + " " + numberToAscii(senderId) + " " + fileIdToAscii(fileId) + " " + numberToAscii(chunkNo) + " " + numberToAscii(replicationDegree) + "\r\n" + chunk.getBuffer();
+
+		String sender = Utils.numberToAscii(senderId);
+		String file =  Utils.fileIdToAscii(fileId);
+		String chunkN = Utils.numberToAscii(chunkNo);
+		String rep = Utils.numberToAscii(replicationDegree);
+
+		System.out.println(sender);
+		System.out.println(file);
+		System.out.println(chunkN);
+		System.out.println(rep);
+
+		return "PUTCHUNK " + version + " " + sender + " " + file + " " + chunkN + " " + rep + " \r\n\r\n" + chunk.getBuffer();
+	}
+
+	public String buildGetChunkMessage(String version, int senderId, String fileId, int chunkNo) {
+
+		String sender = Utils.numberToAscii(senderId);
+		String file =  Utils.fileIdToAscii(fileId);
+		String chunkN = Utils.numberToAscii(chunkNo);
+
+		return "GETCHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";
+
 	}
 
 	public String buildStoredMessage(String version, int senderId, String fileId, int chunkNo){
-		return "STORED" + version + " " + numberToAscii(senderId) + " " + fileIdToAscii(fileId) + " " + numberToAscii(chunkNo);
+		return "STORED" + version + " " + Utils.numberToAscii(senderId) + " " + Utils.fileIdToAscii(fileId) + " " + Utils.numberToAscii(chunkNo)+ " \r\n\r\n";
+	}
+
+	public String buildChunkMessage(String version, int senderId, String fileId, int chunkNo, Chunk chunk) {
+		String sender = Utils.numberToAscii(senderId);
+		String file =  Utils.fileIdToAscii(fileId);
+		String chunkN = Utils.numberToAscii(chunkNo);
+
+		return "CHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n" + chunk.getBuffer();
+	}
+
+	public String buildDeleteMessage(String version, int senderId, String fileId) {
+		String sender = Utils.numberToAscii(senderId);
+		String file =  Utils.fileIdToAscii(fileId);
+
+		return "DELETE " + version + " " + sender + " " + file + " \r\n\r\n";
+	}
+
+	public String buildRemovedMessage(String version, int senderId, String fileId, int chunkNo) {
+		String sender = Utils.numberToAscii(senderId);
+		String file =  Utils.fileIdToAscii(fileId);
+		String chunkN = Utils.numberToAscii(chunkNo);
+
+		return "REMOVED " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";
 	}
 }

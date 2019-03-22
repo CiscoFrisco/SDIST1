@@ -2,12 +2,13 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 
 public abstract class Channel implements Runnable {
 	
-	private InetAddress address;
-	private int port;
+	protected InetAddress address;
+	protected int port;
 
 	public Channel(String IPaddress, String port) {
 		try {
@@ -20,8 +21,9 @@ public abstract class Channel implements Runnable {
 	}
 	
 	public void sendMessage(String msg) {
+		System.out.println("send");
 		try {
-			DatagramSocket socket = new DatagramSocket();
+			MulticastSocket socket = new MulticastSocket(this.port);
 			DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, address, port);
 
 			socket.send(msgPacket);
@@ -33,7 +35,7 @@ public abstract class Channel implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		System.out.println("fuckcomp");
 
 	}
 
