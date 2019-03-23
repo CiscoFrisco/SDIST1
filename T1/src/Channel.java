@@ -9,11 +9,13 @@ public abstract class Channel implements Runnable {
 	
 	protected InetAddress address;
 	protected int port;
+	protected Peer peer;
 
-	public Channel(String IPaddress, String port) {
+	public Channel(String IPaddress, String port, Peer peer) {
 		try {
 			this.address = InetAddress.getByName(IPaddress);
 			this.port = Integer.parseInt(port);
+			this.peer = peer;
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

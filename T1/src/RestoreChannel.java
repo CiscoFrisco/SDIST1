@@ -6,11 +6,8 @@ import java.net.UnknownHostException;
 
 public class RestoreChannel extends Channel {
 
-    private InetAddress address;
-    private int port;
-
-    public RestoreChannel(String IPaddress, String port) {
-       super(IPaddress, port);
+    public RestoreChannel(String IPaddress, String port, Peer peer) {
+       super(IPaddress, port, peer);
     }
 
     @Override

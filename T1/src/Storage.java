@@ -5,22 +5,33 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Storage implements Serializable {
 	
-	private ArrayList<Chunk> chunks;
+	private HashMap<Chunk, Integer> chunks;
 	private ArrayList<StoredFile> storedFiles;
 	private int peerId;
 	
 	public Storage(int peerId) {
-		this.chunks = new ArrayList<Chunk>();
+		this.chunks = new HashMap<Chunk, Integer>();
 		this.storedFiles = new ArrayList<StoredFile>();
 
 		this.peerId = peerId;
 	}
 
-	public void addChunk(Chunk chunk){
-		this.chunks.add(chunk);
+	public void addChunk(Chunk chunk, int numConfirmationMessagess){
+		this.chunks.put(chunk, numConfirmationMessagess);
+	}
+	
+	public boolean contains(String[] header) {
+		
+		for(Chunk chunk : chunks.keySet()) {
+			if(chunk.getFileId() == header[3] && chunk.getChunkNo() == Integer.parseInt(header[4]))
+				return true;
+		}
+		
+		return false;
 	}
 
 	public void addFile(StoredFile file){

@@ -6,8 +6,8 @@ import java.net.MulticastSocket;
 
 public class ControlChannel extends Channel {
 
-	public ControlChannel(String IPaddress, String port) throws IOException {
-		super(IPaddress, port);
+	public ControlChannel(String IPaddress, String port, Peer peer) throws IOException {
+		super(IPaddress, port, peer);
 	}
 
 

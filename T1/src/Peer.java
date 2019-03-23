@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,32 +25,32 @@ public class Peer implements RemoteInterface {
 
 	private int peerID;
 
-	private static ControlChannel MC;
-	private static BackupChannel MDB;
-	private static RestoreChannel MDR;
+	private ControlChannel MC;
+	private BackupChannel MDB;
+	private RestoreChannel MDR;
 
-	private static ScheduledThreadPoolExecutor scheduler;
+	private ScheduledThreadPoolExecutor scheduler;
 	private Storage storage;
 	private String protocol_version;
 
-	public static ScheduledThreadPoolExecutor getScheduler() {
+	public ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
 	}
 
-	public static ControlChannel getMC() {
+	public ControlChannel getMC() {
 		return MC;
 	}
 
-	public static BackupChannel getMDB() {
+	public BackupChannel getMDB() {
 		return MDB;
 	}
 
 	public Peer(String protocol_version, int peerID, String MCaddress, String MCport, String MDBaddress, String MDBport, String MDRaddress, String MDRport) throws IOException {
 		this.protocol_version = protocol_version;
 		this.peerID = peerID;
-		this.MC = new ControlChannel(MCaddress, MCport);
-		this.MDB = new BackupChannel(MDBaddress, MDBport);
-		this.MDR = new RestoreChannel(MDRaddress, MDRport);
+		this.MC = new ControlChannel(MCaddress, MCport, this);
+		this.MDB = new BackupChannel(MDBaddress, MDBport, this);
+		this.MDR = new RestoreChannel(MDRaddress, MDRport, this);
 
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
 		this.storage = new Storage(this.peerID);
@@ -85,7 +86,7 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String backup(String fileName, int replicationDegree) {
-
+		System.out.println("ola");
 		StoredFile file = new StoredFile(fileName);
 		this.storage.addFile(file);
 
@@ -100,10 +101,20 @@ public class Peer implements RemoteInterface {
 
 		for (int i = 0; i < chunks.size(); i++) {
 			String chunk_msg = buildPutChunkMessage(this.protocol_version, this.peerID, file.getFileId(), i, replicationDegree, chunks.get(i));
-			System.out.println(chunk_msg);
-			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB"));
-			System.out.println("WUT");
+			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB", this));
+			this.scheduler.submit(new ConfirmationCollector());
+			
+			int timeout = 1;
+			
+			try {
+				this.scheduler.awaitTermination(timeout, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		
+		
 
 		return "sup";
 	}
@@ -128,14 +139,6 @@ public class Peer implements RemoteInterface {
 		return null;
 	}
 
-	public String buildChunkMsg(String Action, Chunk chunk, int replicationDegree) {
-
-		String chunk_msg = Action + " " + this.peerID + " " + chunk.getFileId() + " " + chunk.getChunkNo() + " "
-				+ Integer.toString(replicationDegree) + " \r\n " + chunk.getBuffer();
-
-		return chunk_msg;
-	}
-
 
 	public String buildPutChunkMessage(String version, int senderId, String fileId, int chunkNo, int replicationDegree, Chunk chunk){
 
@@ -143,8 +146,16 @@ public class Peer implements RemoteInterface {
 		String file =  Utils.fileIdToAscii(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String rep = Utils.numberToAscii(replicationDegree);
-
-		return "PUTCHUNK " + version + " " + sender + " " + file + " " + chunkN + " " + rep + " \r\n\r\n" + chunk.getBuffer();
+		String chunkContent = "";
+		
+		try {
+			chunkContent = new String(chunk.getBuffer(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return "PUTCHUNK " + version + " " + sender + " " + file + " " + chunkN + " " + rep + " \r\n\r\n" + chunkContent;
 	}
 
 	public String buildGetChunkMessage(String version, int senderId, String fileId, int chunkNo) {
@@ -165,8 +176,16 @@ public class Peer implements RemoteInterface {
 		String sender = Utils.numberToAscii(senderId);
 		String file =  Utils.fileIdToAscii(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
+		String chunkContent = "";
 
-		return "CHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n" + chunk.getBuffer();
+		try {
+			chunkContent = new String(chunk.getBuffer(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return "CHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n" + chunkContent;
 	}
 
 	public String buildDeleteMessage(String version, int senderId, String fileId) {
@@ -182,5 +201,23 @@ public class Peer implements RemoteInterface {
 		String chunkN = Utils.numberToAscii(chunkNo);
 
 		return "REMOVED " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";
+	}
+
+	public RestoreChannel getMDR() {
+		return MDR;
+	}
+	
+	public int getId() {
+		return peerID;
+	}
+
+	public Storage getStorage() {
+		// TODO Auto-generated method stub
+		return storage;
+	}
+
+	public String getVersion() {
+		// TODO Auto-generated method stub
+		return protocol_version;
 	}
 }
