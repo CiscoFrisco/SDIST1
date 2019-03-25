@@ -1,24 +1,16 @@
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.rmi.RemoteException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class Peer implements RemoteInterface {
@@ -32,6 +24,8 @@ public class Peer implements RemoteInterface {
 	private ScheduledThreadPoolExecutor scheduler;
 	private Storage storage;
 	private String protocol_version;
+	
+	private HashMap<String, Integer> confirmationMessages;
 
 	public ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
@@ -53,11 +47,34 @@ public class Peer implements RemoteInterface {
 		this.MDR = new RestoreChannel(MDRaddress, MDRport, this);
 
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
-		this.storage = new Storage(this.peerID);
+		
+		if(new File("C:\\Users\\franc\\Desktop\\peerStorage" + peerID + ".ser").isFile()) {
+			this.storage = Storage.deserialize(this.peerID);
+		}
+		else
+			this.storage = new Storage(this.peerID);
 
 		this.scheduler.execute(this.MC);
 		this.scheduler.execute(this.MDB);
 		this.scheduler.execute(this.MDR);
+		
+		this.confirmationMessages = new HashMap<String, Integer>();
+		
+		Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
+	}
+	
+	public void addConfirmationMessage(String message) {
+		
+		if(confirmationMessages.containsKey(message)) {
+			int oldValue = confirmationMessages.get(message);
+			confirmationMessages.replace(message, oldValue + 1);
+		}
+		else
+			this.confirmationMessages.put(message, 1);
+	}
+	
+	public int getNumConfirmationMessages(String message) {
+		return confirmationMessages.get(message);
 	}
 
 	public static void main(String[] args) {
@@ -86,7 +103,7 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String backup(String fileName, int replicationDegree) {
-		System.out.println("ola");
+		System.out.println("corri");
 		StoredFile file = new StoredFile(fileName);
 		this.storage.addFile(file);
 
@@ -102,16 +119,7 @@ public class Peer implements RemoteInterface {
 		for (int i = 0; i < chunks.size(); i++) {
 			String chunk_msg = buildPutChunkMessage(this.protocol_version, this.peerID, file.getFileId(), i, replicationDegree, chunks.get(i));
 			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB", this));
-			this.scheduler.submit(new ConfirmationCollector());
-			
-			int timeout = 1;
-			
-			try {
-				this.scheduler.awaitTermination(timeout, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			this.scheduler.schedule(new ConfirmationCollector(this, chunk_msg, 1, 1, replicationDegree), 1, TimeUnit.SECONDS);
 		}
 		
 		

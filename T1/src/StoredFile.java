@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,8 +13,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-class StoredFile {
+class StoredFile implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8932985840046828L;
 	private String fileName;
 	private String fileId;
 

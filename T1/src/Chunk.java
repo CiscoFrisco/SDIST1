@@ -1,6 +1,11 @@
+import java.io.Serializable;
 
-public class Chunk {
+public class Chunk implements Serializable {
 		
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8102200653806457589L;
 	private String fileId;
 	private int chunkNo;
 	private byte[] buffer;

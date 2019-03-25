@@ -8,11 +8,7 @@ import javax.xml.bind.DatatypeConverter;
 public class Utils {
 	
 	public static void main(String[] args) {
-		String ascii = fileIdToAscii("2");
-		System.out.println(ascii);
-		System.out.println(asciiToFileId(ascii));
-		
-		System.out.println(numberToAscii(0));
+		System.out.println(asciiToNumber("50"));
 	}
 	
 	public static String fileIdToAscii(String fileId){
@@ -64,7 +60,7 @@ public class Utils {
 			num += Character.getNumericValue(ascii.charAt(i))*(int)Math.pow(10, ascii.length() - i - 1);
 		}
 		
-		return num;
+		return num - 48;
 	}
 	
     public static String getSHA(String input) {
@@ -98,5 +94,13 @@ public class Utils {
             return null;
         }
     }
+    
+	public static String getHeader(String message) {
+		return message.substring(0, message.indexOf("\r\n"));
+	}
+	
+	public static String getChunkContent(String message) {
+		return message.substring(message.indexOf("\r\n\r\n"));
+	}
 
 }

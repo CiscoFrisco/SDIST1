@@ -10,6 +10,7 @@ public class ReceivePutChunkThread implements Runnable {
 	public ReceivePutChunkThread(String[] header, String chunkContent, Peer peer) {
 		this.header = header;
 		this.chunkContent = chunkContent;
+		this.peer = peer;
 	}
 
 	@Override
@@ -19,18 +20,25 @@ public class ReceivePutChunkThread implements Runnable {
 		int chunkNo = Utils.asciiToNumber(header[4]);
 		int replicationDegree = Utils.asciiToNumber(header[5]);
 		
+		System.out.println("wtf" + peer.getId());
+		System.out.println("jey" + senderId);
+
 		// A peer cant store the chunks of its own files
 		if(peer.getId() == senderId) {
 			return;
 		}
 		
+		System.out.println("ali");
+		
 		// If this peer already stored this chunk
-		if(peer.getStorage().contains(header)) {
+		if(peer.getStorage().contains(fileId, chunkNo)) {
 			return;
 		}
 		
+		System.out.println("aqui");
+		
 		String stored = peer.buildStoredMessage(peer.getVersion(), peer.getId(), fileId, chunkNo);
-		peer.getStorage().addChunk(new Chunk(fileId, chunkNo, chunkContent.getBytes(),chunkContent.length()), 0);
+		peer.getStorage().addChunk(new Chunk(fileId, chunkNo, chunkContent.getBytes(),chunkContent.length()));
 		
 		Random random = new Random();
 		int interval = random.nextInt(401);

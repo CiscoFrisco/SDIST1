@@ -23,7 +23,6 @@ public abstract class Channel implements Runnable {
 	}
 	
 	public void sendMessage(String msg) {
-		System.out.println("send");
 		try {
 			MulticastSocket socket = new MulticastSocket(this.port);
 			DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, address, port);
@@ -37,7 +36,6 @@ public abstract class Channel implements Runnable {
 
 	@Override
 	public void run() {
-		System.out.println("fuckcomp");
 
 	}
 

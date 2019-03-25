@@ -19,7 +19,7 @@ public class MessageSenderThread implements Runnable {
 		case "MDB":
 			peer.getMDB().sendMessage(this.message);
 			break;
-		case "MR":
+		case "MDR":
 			peer.getMDR().sendMessage(this.message);
 			break;
 		default:

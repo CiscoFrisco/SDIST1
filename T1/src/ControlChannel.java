@@ -24,6 +24,8 @@ public class ControlChannel extends Channel {
 			while(true){
 				DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
 				Msocket.receive(msgPacket);
+				String message = new String(buf, 0, buf.length).trim();
+				peer.getScheduler().execute(new MessageReceiverThread(message, peer));
 			}
 			//Get advertisement
 			
