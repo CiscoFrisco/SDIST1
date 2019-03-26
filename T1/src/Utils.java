@@ -2,6 +2,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Random;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -101,6 +102,11 @@ public class Utils {
 	
 	public static String getChunkContent(String message) {
 		return message.substring(message.indexOf("\r\n\r\n"));
+	}
+
+	public static int getRandomNumber(int ceil) {
+		Random random = new Random();
+		return random.nextInt(ceil);
 	}
 
 }

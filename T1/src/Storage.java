@@ -26,6 +26,15 @@ public class Storage implements Serializable {
 		return chunks;
 	}
 
+	public boolean hasFile(String fileId){
+		for( StoredFile storedFile : storedFiles){
+			if(storedFile.getFileId() == fileId)
+				return true;
+		}
+
+		return false;
+	}
+
 	public void addChunk(Chunk chunk){
 		this.chunks.put(chunk, 1);
 	}
@@ -39,6 +48,17 @@ public class Storage implements Serializable {
 		}
 		
 		return null;
+	}
+
+	public int getReplicationDegree(String fileId, int chunkNo) {
+		for(Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			Chunk key = entry.getKey();
+			if(key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+				return entry.getValue();
+			}
+		}
+		
+		return -1;
 	}
 	
 	public boolean contains(String fileId, int chunkNo) {
@@ -60,6 +80,21 @@ public class Storage implements Serializable {
 				return;
 			}
 		}
+	}
+
+	public boolean decrementReplicationDegree(String fileId, int chunkNo){
+
+		for(Map.Entry<Chunk, Integer> entry : chunks.entrySet()){
+			if(entry.getKey().getFileId() == fileId && entry.getKey().getChunkNo() == chunkNo){
+				Chunk chunk = entry.getKey();
+				int value = entry.getValue();
+
+				chunks.replace(chunk, value);
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public void addFile(StoredFile file){
@@ -104,6 +139,38 @@ public class Storage implements Serializable {
 			c.printStackTrace();
 			return null;
 		 }
-	}
+        }
 
+        /**
+         * @param chunks the chunks to set
+         */
+        public void setChunks(HashMap<Chunk, Integer> chunks) {
+          this.chunks = chunks;
+        }
+
+        /**
+         * @return the storedFiles
+         */
+        public ArrayList<StoredFile> getStoredFiles() { return storedFiles; }
+
+        /**
+         * @param storedFiles the storedFiles to set
+         */
+        public void setStoredFiles(ArrayList<StoredFile> storedFiles) {
+          this.storedFiles = storedFiles;
+        }
+
+        /**
+         * @return the peerId
+         */
+        public int getPeerId() { return peerId; }
+
+        /**
+         * @param peerId the peerId to set
+         */
+        public void setPeerId(int peerId) { this.peerId = peerId; }
+
+		public void deleteChunks(String fileId) {
+			chunks.entrySet().removeIf(entry -> entry.getKey().getFileId() == fileId);
+		}
 }

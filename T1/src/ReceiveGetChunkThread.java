@@ -13,10 +13,8 @@ public class ReceiveGetChunkThread implements Runnable {
 
 	@Override
 	public void run() {
-
-
-		Random random = new Random();
-		int waitTime = random.nextInt(401);
+	
+		int waitTime = Utils.getRandomNumber(401);
 
 		int chunkNo = Integer.parseInt(header[4]);
 		String fileId = header[3];

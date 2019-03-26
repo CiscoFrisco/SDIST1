@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
@@ -63,18 +64,21 @@ public class Peer implements RemoteInterface {
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
 	}
 	
-	public void addConfirmationMessage(String message) {
+	public void addConfirmationMessage(String message, int peer) {
 		
-		if(confirmationMessages.containsKey(message)) {
-			int oldValue = confirmationMessages.get(message);
-			confirmationMessages.replace(message, oldValue + 1);
-		}
-		else
-			this.confirmationMessages.put(message, 1);
+		if(!confirmationMessages.containsKey(message))
+			this.confirmationMessages.put(message, peer);
 	}
 	
 	public int getNumConfirmationMessages(String message) {
-		return confirmationMessages.get(message);
+
+		int num = 0;
+		for(String entry : confirmationMessages.keySet()){
+			if(entry == message)
+				num++;
+		}
+
+		return num;
 	}
 
 	public static void main(String[] args) {
@@ -103,7 +107,6 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String backup(String fileName, int replicationDegree) {
-		System.out.println("corri");
 		StoredFile file = new StoredFile(fileName);
 		this.storage.addFile(file);
 
@@ -121,9 +124,7 @@ public class Peer implements RemoteInterface {
 			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB", this));
 			this.scheduler.schedule(new ConfirmationCollector(this, chunk_msg, 1, 1, replicationDegree), 1, TimeUnit.SECONDS);
 		}
-		
-		
-
+	
 		return "sup";
 	}
 
