@@ -13,7 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-class StoredFile implements Serializable{
+class StoredFile implements Serializable {
 
 	/**
 	 * 
@@ -21,10 +21,12 @@ class StoredFile implements Serializable{
 	private static final long serialVersionUID = -8932985840046828L;
 	private String fileName;
 	private String fileId;
+	private int replicationDegree;
 
-	StoredFile(String fileName) {
+	public StoredFile(String fileName, int replicationDegree) {
 		this.fileName = fileName;
-
+		this.replicationDegree = replicationDegree;
+		
 		this.fileId = encryptFileId(fileName);
 	}
 
@@ -56,18 +58,21 @@ class StoredFile implements Serializable{
 		// try-with-resources to ensure closing stream
 		try (FileInputStream fis = new FileInputStream(f); BufferedInputStream bis = new BufferedInputStream(fis)) {
 
-
 			for (; (bytesAmount = bis.read(buffer)) > 0; chunkNo++)
-				chunks.add(new Chunk(fileId, chunkNo, buffer, bytesAmount));
+				chunks.add(new Chunk(fileId, chunkNo, buffer, bytesAmount, replicationDegree));
 		}
 
-		if(f.length() % chunkSize == 0)
-			chunks.add(new Chunk(fileId, chunkNo, buffer, 0));
+		if (f.length() % chunkSize == 0)
+			chunks.add(new Chunk(fileId, chunkNo, buffer, 0, replicationDegree));
 
 		return chunks;
 	}
 
 	public String getFileId() {
 		return fileId;
+	}
+
+	public String toString() {
+		return "Pathname: " + fileName + "\n FileId: " + fileId + "\n Replication degree: " + replicationDegree;
 	}
 }

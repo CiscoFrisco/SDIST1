@@ -90,9 +90,22 @@ class TestApp {
             Registry registry = LocateRegistry.getRegistry("localhost");
             RemoteInterface stub = (RemoteInterface) registry.lookup(remote_object_name);
             String response = "";
+            String operation = args[1];
             
-            if(args[1].equals("BACKUP")) {
+            if(operation.equals("BACKUP")) {
                 response = stub.backup(args[2], Integer.parseInt(args[3]));
+            }
+            else if(operation.equals("RESTORE")){
+                response = stub.restore(args[2]);
+            }
+            else if(operation.equals("DELETE")){
+                response = stub.delete(args[2]);
+            }
+            else if(operation.equals("RECLAIM")){
+                response = stub.reclaim(Integer.parseInt(args[2]));
+            }
+            else {
+                response = stub.state();
             }
             
             System.out.println("response: " + response);

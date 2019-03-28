@@ -65,6 +65,10 @@ public class Chunk implements Serializable {
 	public void setFileId(String fileId) {
 		this.fileId = fileId;
 	}
+
+	public String toString(){
+		return "Id: " + chunkNo + "\n Size (KBytes): " + bufferSize;
+	}
 	
 	
 }
