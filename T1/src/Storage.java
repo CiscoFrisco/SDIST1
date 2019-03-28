@@ -6,23 +6,23 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 public class Storage implements Serializable {
 
-	private HashMap<Chunk, Integer> chunks;
+	private ConcurrentHashMap<Chunk, Integer> chunks;
 	private ArrayList<StoredFile> storedFiles;
 	private int peerId;
 
 	public Storage(int peerId) {
-		this.chunks = new HashMap<Chunk, Integer>();
+		this.chunks = new ConcurrentHashMap<Chunk, Integer>();
 		this.storedFiles = new ArrayList<StoredFile>();
 
 		this.peerId = peerId;
 	}
 
-	public HashMap<Chunk, Integer> getChunks() {
+	public ConcurrentHashMap<Chunk, Integer> getChunks() {
 		return chunks;
 	}
 
@@ -164,7 +164,7 @@ public class Storage implements Serializable {
 	/**
 	 * @param chunks the chunks to set
 	 */
-	public void setChunks(HashMap<Chunk, Integer> chunks) {
+	public void setChunks(ConcurrentHashMap<Chunk, Integer> chunks) {
 		this.chunks = chunks;
 	}
 

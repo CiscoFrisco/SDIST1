@@ -5,7 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.rmi.RemoteException;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
@@ -26,7 +26,7 @@ public class Peer implements RemoteInterface {
 	private Storage storage;
 	private String protocol_version;
 
-	private HashMap<String, Integer> confirmationMessages;
+	private ConcurrentHashMap<String, Integer> confirmationMessages;
 
 	public ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
@@ -59,7 +59,7 @@ public class Peer implements RemoteInterface {
 		this.scheduler.execute(this.MDB);
 		this.scheduler.execute(this.MDR);
 
-		this.confirmationMessages = new HashMap<String, Integer>();
+		this.confirmationMessages = new ConcurrentHashMap<String, Integer>();
 
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
 	}
