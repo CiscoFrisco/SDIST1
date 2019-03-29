@@ -1,9 +1,10 @@
 package lab4;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -17,38 +18,19 @@ import java.util.concurrent.TimeUnit;
 
 public class Server {
 
-	private static DatagramSocket socket;
+	private static ServerSocket serverSocket;
 	private static HashMap<String, String> plates;
 
-	public Server(int port) throws SocketException {
-		socket = new DatagramSocket(port);
+	public Server(int port) throws IOException {
 		plates = new HashMap<String, String>(); 
+		serverSocket = new ServerSocket(port);
 	}
 
 	public static void main(String[] args) throws InterruptedException, UnknownHostException {
-		if(args.length != 3) {
-			System.out.println("Syntax: java Server <srvc_port> <mcast_addr> <mcast_port> ");
+		if(args.length != 1) {
+			System.out.println("Syntax: java Server <srvc_port>");
 			return;
 		}
-
-		int port = Integer.parseInt(args[2]);
-		String msg = "localhost:" + args[0];
-
-		final ScheduledThreadPoolExecutor scheduler = 
-				(ScheduledThreadPoolExecutor)Executors.newScheduledThreadPool(1);
-
-		final ScheduledFuture<?> advertiser = 
-				scheduler.scheduleAtFixedRate(new Advertise("localhost", Integer.parseInt(args[0]), port, msg, args[1]), 2, 1, TimeUnit.SECONDS);
-
-//		scheduler.schedule(new Runnable() {
-//
-//			@Override
-//			public void run() {
-//				advertiser.cancel(true);
-//				scheduler.shutdown();			
-//			}
-//		}, 10, TimeUnit.SECONDS);	
-
 
 		int srvc_port = Integer.parseInt(args[0]);
 
@@ -67,38 +49,20 @@ public class Server {
 
 	public void service() throws IOException {
 
-		int SIZE = 512;
-		byte[] buffer = new byte[SIZE];
-
 		while(true) {
-			DatagramPacket request = new DatagramPacket(buffer, SIZE);
-			socket.receive(request);
-
-			InetAddress clientAddress = request.getAddress();
-			int clientPort = request.getPort();
-
-			String operation = new String(buffer, 0, request.getLength());
-
-			String[] operands = operation.split(" ");
-			String res = "";
-
-			if(operands[0].equals("REGISTER")) {
-				res = register(operands[1], operands[2]);
-			}
-			else if(operands[0].equals("LOOKUP")) {
-				res = lookup(operands[1]);
-			}
-			else {
-				System.out.println("Invalid operation!");
-			}
-
-			DatagramPacket reply = new DatagramPacket(res.getBytes(), res.length(), clientAddress, clientPort);
-			socket.send(reply);
-
+			
+			Socket server = serverSocket.accept();
+			
+			DataInputStream in = new DataInputStream(server.getInputStream());
+			
+			DataOutputStream out = new DataOutputStream(server.getOutputStream());
+			
+			Thread t = new Handler(this, in, out);
+			t.start();
 		}
 	}
 
-	public static String register(String plate_number, String owner_name) {
+	public String register(String plate_number, String owner_name) {
 
 
 		String platePattern = "[0-9A-Z]{2}-[0-9A-Z]{2}-[0-9A-Z]{2}";
@@ -116,7 +80,7 @@ public class Server {
 		return Integer.toString(plates.size());
 	}
 
-	public static String lookup(String plate_number) {
+	public String lookup(String plate_number) {
 
 		System.out.println("lookup " + plate_number);
 		String owner_name;
@@ -127,38 +91,52 @@ public class Server {
 
 		return plate_number + " " + owner_name;
 	}
+}
 
-	static class Advertise implements Runnable {
-		
-		private int port;
-		private String msg;
-		private String address;
-		private String srvc_addr;
-		private int srvc_port;
-		
-		public Advertise(String srvc_addr, int srvc_port, int port, String msg, String address) throws UnknownHostException {
-			this.port = port;
-			this.msg = msg;
-			this.address =  address;
-			this.srvc_addr = srvc_addr;
-			this.srvc_port = srvc_port;
+class Handler extends Thread {
+	
+	private Server server;
+	private DataInputStream dis;
+	private DataOutputStream dos;
+
+	public Handler(Server server, DataInputStream dis, DataOutputStream dos) {
+		this.server = server;
+		this.dis = dis;
+		this.dos = dos;
+	}
+	
+	@Override
+	public void run() {
+		String operation = "";
+		try {
+			operation = dis.readUTF();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
+		
+		System.out.println(operation);
 
-		public void run() {
-			try {
-				InetAddress addr = InetAddress.getByName(address);
-				DatagramSocket serverSocket = new DatagramSocket();
-				DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, addr, port);
+		String[] operands = operation.split(" ");
+		String res = "";
 
-				serverSocket.send(msgPacket);
-				
-				System.out.println("multicast: " + this.address + " " + this.port + ": " + this.srvc_addr + " " + this.srvc_port);
-				
-				serverSocket.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}     
+		if(operands[0].equals("REGISTER")) {
+			res = server.register(operands[1], operands[2]);
+		}
+		else if(operands[0].equals("LOOKUP")) {
+			res = server.lookup(operands[1]);
+		}
+		else {
+			System.out.println("Invalid operation!");
+		}
+		
+		System.out.println(res);
+
+		try {
+			dos.writeUTF(res);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
-
 }

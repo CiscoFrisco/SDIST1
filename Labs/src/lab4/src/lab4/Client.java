@@ -1,113 +1,101 @@
 package lab4;
 
-import java.net.DatagramSocket;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.SocketTimeoutException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 
 public class Client {
 
 	public static void main(String[] args) {
-		if(args.length < 4 || args.length > 5) {
-			System.out.println("Syntax: java client <mcast_addr> <mcast_port> <oper> <opnd>*");
+		if(args.length < 5 || args.length > 6) {
+			System.out.println("Syntax: java client <host_name> <port_number> <delay> <oper> <opnd>*");
 			return;
 		}
 
 		String hostname = args[0];
 		int port = Integer.parseInt(args[1]);
 
+		Socket client;
+		OutputStream out;
+		DataOutputStream output;
+
 		try {
-			InetAddress address = InetAddress.getByName(hostname);
-			MulticastSocket Msocket = new MulticastSocket(port);
-			Msocket.joinGroup(address);
+			client = new Socket(hostname, port);
+			out = client.getOutputStream();
+			output = new DataOutputStream(out);
+			
+			String request;
 
-			byte[] buf = new byte[256];
-
-			//Get advertisement
-			DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
-			Msocket.receive(msgPacket);
-
-			String multicast_args = new String(buf, 0, buf.length).trim();
-			String[] data = multicast_args.split(":");
-			System.out.println("multicast: " + hostname + " " + port + ": " + multicast_args);
-
-			Msocket.close();
-
-			DatagramPacket request;
-			DatagramSocket Dsocket = new DatagramSocket();
-			InetAddress srvc_address = InetAddress.getByName(data[0]);
-
-
-			if(args[2].equals("register") && args.length == 5) {
-				request = register(args[3], args[4], srvc_address, Integer.parseInt(data[1]));
+			if(args[3].equals("register") && args.length == 6) {
+				request = register(args[4], args[5]);
 			}
-			else if(args[2].equals("lookup") && args.length == 4) {
-				request = lookup(args[3], srvc_address, Integer.parseInt(data[1]));
+			else if(args[3].equals("lookup") && args.length == 5) {
+				request = lookup(args[4]);
 			}
 			else {
-				System.out.println("Syntax: java client <mcast_addr> <mcast_port> <oper> <opnd>*");
-				Dsocket.close();
+				System.out.println("Syntax: java client <host_name> <port_number> <delay> <oper> <opnd>*");
 				return;
 			}
+			
+			output.writeUTF(request);
+			
+			InputStream in = client.getInputStream();
+			DataInputStream input = new DataInputStream(in);
 
-			Dsocket.send(request);
-
-
-			byte[] buffer = new byte[512];
-			DatagramPacket response = new DatagramPacket(buffer, buffer.length);
-			Dsocket.receive(response);
-
-			String reply = new String(buffer, 0, response.getLength());
-			String output = "";
-
-			if(args[2].equals("register")) {
-				output+= "register " + args[3] + " " + args[4] + ": ";
+			String reply = input.readUTF();
+			String result = "";
+			
+			if(args[3].equals("register")) {
+				result+= "register " + args[4] + " " + args[5] + ": ";
 
 				if(reply.equals("-1")) {
-					output+="ERROR";
+					result+="ERROR";
 				}
 				else {
-					output+=reply;
+					result+=reply;
 				}
 			}
 			else {
-				output+= "lookup " + args[3] + ": ";
+				result+= "lookup " + args[4] + ": ";
 
 				if(reply.equals("NOT_FOUND")) {
-					output+="ERROR";
+					result+="ERROR";
 				}
 				else {
-					output+=reply;
+					result+=reply;
 				}
 			}
 
 
-			System.out.println(output);
-			System.out.println();       
+			System.out.println(result);
+			System.out.println();
+			
+			try {
+				Thread.sleep(Integer.parseInt(args[2]));
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			client.close();
 
-			Dsocket.close();
-
-		}catch (IOException ex) {
-			ex.printStackTrace();
-		}
-
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
 	}
 
-	public static DatagramPacket register(String plate_number, String owner_name, InetAddress address, int port) {
-		String message = "REGISTER " + plate_number + " " + owner_name;
-
-		DatagramPacket request = new DatagramPacket(message.getBytes(), message.length(), address, port);
-
-		return request;
+	public static String register(String plate_number, String owner_name) {
+		return "REGISTER " + plate_number + " " + owner_name;
 	}	
 
-	public static DatagramPacket lookup(String plate_number, InetAddress address, int port) {
-		String message = "LOOKUP " + plate_number;
-
-		DatagramPacket request = new DatagramPacket(message.getBytes(), message.length(), address, port);
-
-		return request;
+	public static String lookup(String plate_number) {
+		return "LOOKUP " + plate_number;
 	}
 }
