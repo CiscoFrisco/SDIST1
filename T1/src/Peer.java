@@ -18,9 +18,7 @@ public class Peer implements RemoteInterface {
 
 	private int peerID;
 
-	private ControlChannel MC;
-	private BackupChannel MDB;
-	private RestoreChannel MDR;
+	private ConcurrentHashMap<String, Channel> channels;
 
 	private ScheduledThreadPoolExecutor scheduler;
 	private Storage storage;
@@ -32,32 +30,31 @@ public class Peer implements RemoteInterface {
 		return scheduler;
 	}
 
-	public ControlChannel getMC() {
-		return MC;
-	}
-
-	public BackupChannel getMDB() {
-		return MDB;
+	public Channel getChannel(String channel) {
+		return channels.get(channel);
 	}
 
 	public Peer(String protocol_version, int peerID, String MCaddress, String MCport, String MDBaddress, String MDBport,
 			String MDRaddress, String MDRport) throws IOException {
 		this.protocol_version = protocol_version;
 		this.peerID = peerID;
-		this.MC = new ControlChannel(MCaddress, MCport, this);
-		this.MDB = new BackupChannel(MDBaddress, MDBport, this);
-		this.MDR = new RestoreChannel(MDRaddress, MDRport, this);
+		
+		this.channels = new ConcurrentHashMap<String, Channel>();
+		this.channels.put("MC", new Channel(MCaddress, MCport, this));
+		this.channels.put("MDB", new Channel(MDBaddress, MDBport, this));
+		this.channels.put("MDR", new Channel(MDRaddress, MDRport, this));
+
 
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
 
-		if (new File("C:\\Users\\franc\\Desktop\\peerStorage" + peerID + ".ser").isFile()) {
-			this.storage = Storage.deserialize(this.peerID);
+		if (new File("peer" + peerID).exists()) {
+			this.storage = Storage.readStorage("peer", this.peerID);
 		} else
 			this.storage = new Storage(this.peerID);
 
-		this.scheduler.execute(this.MC);
-		this.scheduler.execute(this.MDB);
-		this.scheduler.execute(this.MDR);
+		for(Channel channel : channels.values()){
+			this.scheduler.execute(channel);
+		}
 
 		this.confirmationMessages = new ConcurrentHashMap<String, Integer>();
 
@@ -228,10 +225,6 @@ public class Peer implements RemoteInterface {
 		String chunkN = Utils.numberToAscii(chunkNo);
 
 		return "REMOVED " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";
-	}
-
-	public RestoreChannel getMDR() {
-		return MDR;
 	}
 
 	public int getId() {

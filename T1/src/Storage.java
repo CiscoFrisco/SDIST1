@@ -1,15 +1,14 @@
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
-public class Storage implements Serializable {
+public class Storage {
 
 	private ConcurrentHashMap<Chunk, Integer> chunks;
 	private ArrayList<StoredFile> storedFiles;
@@ -17,6 +16,13 @@ public class Storage implements Serializable {
 
 	public Storage(int peerId) {
 		this.chunks = new ConcurrentHashMap<Chunk, Integer>();
+		this.storedFiles = new ArrayList<StoredFile>();
+
+		this.peerId = peerId;
+	}
+
+	public Storage(int peerId, ConcurrentHashMap<Chunk, Integer> chunks) {
+		this.chunks = chunks;
 		this.storedFiles = new ArrayList<StoredFile>();
 
 		this.peerId = peerId;
@@ -122,43 +128,48 @@ public class Storage implements Serializable {
 		this.storedFiles.add(file);
 	}
 
-	public void serialize() {
-		try {
-			FileOutputStream fileOut = new FileOutputStream("C:\\Users\\franc\\Desktop\\peerStorage" + peerId + ".ser");
-			ObjectOutputStream out = new ObjectOutputStream(fileOut);
-			out.writeObject(this);
-			out.close();
-			fileOut.close();
-		} catch (IOException i) {
-			i.printStackTrace();
+	public void save() {
+
+		String path = "peer" + peerId;
+
+		File directory = new File(path);
+		File backup = new File(path.concat("/backup"));
+		File restore = new File(path.concat("/restore"));
+
+		if(!directory.exists()){
+			directory.mkdir();
+			backup.mkdir();
+			restore.mkdir();
 		}
-	}
 
-	public static Storage deserialize(int peerId) {
+		for(Chunk entry : chunks.keySet()){
+			String fileId = entry.getFileId();
 
-		Storage storage;
+			File fileChunksDir = new File(path.concat("/backup/" + fileId));
 
-		try {
-			FileInputStream fileIn = new FileInputStream("C:\\Users\\franc\\Desktop\\peerStorage" + peerId + ".ser");
-			ObjectInputStream in = new ObjectInputStream(fileIn);
-			storage = (Storage) in.readObject();
-			in.close();
-			fileIn.close();
-
-			System.out.println(storage.getChunks().size());
-			for (Map.Entry<Chunk, Integer> entry : storage.getChunks().entrySet()) {
-				System.out.println(((Chunk) entry.getKey()).getChunkNo() + ", " + entry.getValue());
+			if(!fileChunksDir.exists()){
+				fileChunksDir.mkdir();
 			}
 
-			return storage;
-		} catch (IOException i) {
-			i.printStackTrace();
-			return null;
-		} catch (ClassNotFoundException c) {
-			System.out.println("Storage class not found");
-			c.printStackTrace();
-			return null;
+			entry.serialize(path.concat("/backup/" + fileId));
 		}
+	}
+	
+	public static Storage readStorage(String path, int peerId){
+		ConcurrentHashMap<Chunk, Integer> chunks = new ConcurrentHashMap<Chunk, Integer>();
+		
+		File folder = new File(path + "/peer" + peerId);
+		File backup = new File(path + "/peer" + peerId + "/backup");
+
+		for(File fileEntry : backup.listFiles()){
+			for(File entry : fileEntry.listFiles()){
+				Chunk chunk = Chunk.deserialize(entry.getPath());
+				// TODO: o que fazer com replication degree
+				chunks.put(chunk, 1);
+			}
+		}
+		
+		return new Storage(peerId, chunks); 
 	}
 
 	/**

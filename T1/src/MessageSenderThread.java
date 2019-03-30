@@ -12,19 +12,7 @@ public class MessageSenderThread implements Runnable {
 
 	@Override
 	public void run() {
-		switch(this.channel) {
-		case "MC":
-			peer.getMC().sendMessage(this.message);
-			break;
-		case "MDB":
-			peer.getMDB().sendMessage(this.message);
-			break;
-		case "MDR":
-			peer.getMDR().sendMessage(this.message);
-			break;
-		default:
-			break;
-		}
+		peer.getChannel(this.channel).sendMessage(this.message);
 	}
 
 }

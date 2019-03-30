@@ -8,7 +8,7 @@ public class ShutdownHook extends Thread {
 	}
 	
 	public void run() {
-		this.peer.getStorage().serialize();
+		this.peer.getStorage().save();
 	}
 
 }

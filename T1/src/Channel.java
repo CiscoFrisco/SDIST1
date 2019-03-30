@@ -5,7 +5,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 
-public abstract class Channel implements Runnable {
+public class Channel implements Runnable {
 	
 	protected InetAddress address;
 	protected int port;
@@ -36,7 +36,23 @@ public abstract class Channel implements Runnable {
 
 	@Override
 	public void run() {
+		MulticastSocket Msocket;
+		try {
+			Msocket = new MulticastSocket(this.port);
+			Msocket.joinGroup(address);
+			byte[] buf = new byte[65 * 1000];
 
+			while (true) {
+				DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
+				Msocket.receive(msgPacket);
+				String message = new String(buf, 0, buf.length).trim();
+				peer.getScheduler().execute(new MessageReceiverThread(message, peer));
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }
