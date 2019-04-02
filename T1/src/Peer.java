@@ -158,6 +158,8 @@ public class Peer implements RemoteInterface {
 
 		state+=storage.getChunksInfo();
 
+		state+=storage.getStorageInfo();
+
 		return state;
 	}
 

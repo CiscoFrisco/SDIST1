@@ -10,194 +10,225 @@ import java.util.Map;
 
 public class Storage {
 
-  private ConcurrentHashMap<Chunk, Integer> chunks;
-  private ArrayList<StoredFile> storedFiles;
-  private int peerId;
+	private ConcurrentHashMap<Chunk, Integer> chunks;
+	private ArrayList<StoredFile> storedFiles;
+	private int peerId;
+	private int capacity;
 
-  public Storage(int peerId) {
-    this.chunks = new ConcurrentHashMap<Chunk, Integer>();
-    this.storedFiles = new ArrayList<StoredFile>();
+	public Storage(int peerId) {
+		this.chunks = new ConcurrentHashMap<Chunk, Integer>();
+		this.storedFiles = new ArrayList<StoredFile>();
 
-    this.peerId = peerId;
-  }
+		this.capacity = 2000*1000; // 2000 KBytes
 
-  public Storage(int peerId, ConcurrentHashMap<Chunk, Integer> chunks) {
-    this.chunks = chunks;
-    this.storedFiles = new ArrayList<StoredFile>();
+		this.peerId = peerId;
+	}
 
-    this.peerId = peerId;
-  }
+	public Storage(int peerId, ConcurrentHashMap<Chunk, Integer> chunks) {
+		this.chunks = chunks;
+		this.storedFiles = new ArrayList<StoredFile>();
 
-  public void initializeStorage() {
-    String path = "peer" + peerId;
+		this.peerId = peerId;
+	}
 
-    File directory = new File(path);
-    File backup = new File(path.concat("/backup"));
-    File restore = new File(path.concat("/restore"));
+	public void initializeStorage() {
+		String path = "peer" + peerId;
 
-    directory.mkdir();
-    backup.mkdir();
-    restore.mkdir();
-  }
+		File directory = new File(path);
+		File backup = new File(path.concat("/backup"));
+		File restore = new File(path.concat("/restore"));
 
-  public ConcurrentHashMap<Chunk, Integer> getChunks() { return chunks; }
+		directory.mkdir();
+		backup.mkdir();
+		restore.mkdir();
+	}
 
-  public String getChunksInfo() {
-    String info = "";
+	public ConcurrentHashMap<Chunk, Integer> getChunks() {
+		return chunks;
+	}
 
-    for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-      info += entry.getKey().toString() +
-              "\nPerceived replication degree: " + entry.getValue() + '\n';
-    }
+	public String getChunksInfo() {
+		String info = "";
 
-    return info;
-  }
+		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			info += entry.getKey().toString() + "\nPerceived replication degree: " + entry.getValue() + '\n';
+		}
 
-  public boolean hasFile(String fileId) {
-    for (StoredFile storedFile : storedFiles) {
-      if (storedFile.getFileId() == fileId)
-        return true;
-    }
+		return info;
+	}
 
-    return false;
-  }
+	public int getUsedSpace() {
+		int space = 0;
 
-  public void addChunk(Chunk chunk) {
-	this.chunks.put(chunk, 1);
-	
-	String fileId = chunk.getFileId();
-    String path = "peer" + peerId + "/backup/";
+		File backup = new File("peer" + peerId + "/backup");
 
-    File filedir = new File(path + fileId);
+		for(File fileFolder : backup.listFiles()){
+			for(File chunk : fileFolder.listFiles()){
+				space += chunk.length();
+			}
+		}
 
-    if (!filedir.exists()) {
-      filedir.mkdir();
-    }
+		return space/1000;
+	}
 
-    chunk.serialize(path.concat(fileId));
-  }
+	public String getStorageInfo() {
+		String info = "Storage capacity: " + capacity/1000 + " KBytes\n";
 
-  public Chunk getChunk(String fileId, int chunkNo) {
-    for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-      Chunk key = entry.getKey();
-      if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
-        return key;
-      }
-    }
+		info += "Amount of storage used for chunks: " + getUsedSpace() + " KBytes";
 
-    return null;
-  }
+		return info;
+	}
 
-  public Chunk getChunksFromFile(String fileId, int chunkNo) {
-    for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-      Chunk key = entry.getKey();
-      if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
-        return key;
-      }
-    }
+	public boolean hasFile(String fileId) {
+		for (StoredFile storedFile : storedFiles) {
+			if (storedFile.getFileId() == fileId)
+				return true;
+		}
 
-    return null;
-  }
+		return false;
+	}
 
-  public int getReplicationDegree(String fileId, int chunkNo) {
-    for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-      Chunk key = entry.getKey();
-      if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
-        return entry.getValue();
-      }
-    }
+	public void addChunk(Chunk chunk) {
+		this.chunks.put(chunk, 1);
 
-    return -1;
-  }
+		String fileId = chunk.getFileId();
+		String path = "peer" + peerId + "/backup/";
 
-  public boolean contains(String fileId, int chunkNo) {
-    for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-      Chunk key = entry.getKey();
-      if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
-        return true;
-      }
-    }
+		File filedir = new File(path + fileId);
 
-    return false;
-  }
+		if (!filedir.exists()) {
+			filedir.mkdir();
+		}
 
-  public void updateNumConfirmationMessages(String fileId, int chunkNo) {
-    for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-      Chunk key = entry.getKey();
-      if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
-        chunks.replace(key, entry.getValue() + 1);
-        return;
-      }
-    }
-  }
+		chunk.serialize(path.concat(fileId));
+	}
 
-  public boolean decrementReplicationDegree(String fileId, int chunkNo) {
+	public Chunk getChunk(String fileId, int chunkNo) {
+		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			Chunk key = entry.getKey();
+			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+				return key;
+			}
+		}
 
-    for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-      if (entry.getKey().getFileId() == fileId &&
-          entry.getKey().getChunkNo() == chunkNo) {
-        Chunk chunk = entry.getKey();
-        int value = entry.getValue();
+		return null;
+	}
 
-        chunks.replace(chunk, value);
-        return true;
-      }
-    }
+	public Chunk getChunksFromFile(String fileId, int chunkNo) {
+		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			Chunk key = entry.getKey();
+			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+				return key;
+			}
+		}
 
-    return false;
-  }
+		return null;
+	}
 
-  public void addFile(StoredFile file) { this.storedFiles.add(file); }
+	public int getReplicationDegree(String fileId, int chunkNo) {
+		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			Chunk key = entry.getKey();
+			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+				return entry.getValue();
+			}
+		}
 
-  public static Storage readStorage(String path, int peerId) {
-    ConcurrentHashMap<Chunk, Integer> chunks =
-        new ConcurrentHashMap<Chunk, Integer>();
+		return -1;
+	}
 
-    File folder = new File(path + "/peer" + peerId);
-    File backup = new File(path + "/peer" + peerId + "/backup");
+	public boolean contains(String fileId, int chunkNo) {
+		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			Chunk key = entry.getKey();
+			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+				return true;
+			}
+		}
 
-    if (backup.listFiles() != null)
-      for (File fileEntry : backup.listFiles()) {
-        for (File entry : fileEntry.listFiles()) {
-          Chunk chunk = Chunk.deserialize(entry.getPath());
-          // TODO: o que fazer com replication degree
-          chunks.put(chunk, 1);
-        }
-      }
+		return false;
+	}
 
-    return new Storage(peerId, chunks);
-  }
+	public void updateNumConfirmationMessages(String fileId, int chunkNo) {
+		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			Chunk key = entry.getKey();
+			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+				chunks.replace(key, entry.getValue() + 1);
+				return;
+			}
+		}
+	}
 
-  /**
-   * @param chunks the chunks to set
-   */
-  public void setChunks(ConcurrentHashMap<Chunk, Integer> chunks) {
-    this.chunks = chunks;
-  }
+	public boolean decrementReplicationDegree(String fileId, int chunkNo) {
 
-  /**
-   * @return the storedFiles
-   */
-  public ArrayList<StoredFile> getStoredFiles() { return storedFiles; }
+		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
+			if (entry.getKey().getFileId() == fileId && entry.getKey().getChunkNo() == chunkNo) {
+				Chunk chunk = entry.getKey();
+				int value = entry.getValue();
 
-  /**
-   * @param storedFiles the storedFiles to set
-   */
-  public void setStoredFiles(ArrayList<StoredFile> storedFiles) {
-    this.storedFiles = storedFiles;
-  }
+				chunks.replace(chunk, value);
+				return true;
+			}
+		}
 
-  /**
-   * @return the peerId
-   */
-  public int getPeerId() { return peerId; }
+		return false;
+	}
 
-  /**
-   * @param peerId the peerId to set
-   */
-  public void setPeerId(int peerId) { this.peerId = peerId; }
+	public void addFile(StoredFile file) {
+		this.storedFiles.add(file);
+	}
 
-  public void deleteChunks(String fileId) {
-    chunks.entrySet().removeIf(entry -> entry.getKey().getFileId() == fileId);
-  }
+	public static Storage readStorage(String path, int peerId) {
+		ConcurrentHashMap<Chunk, Integer> chunks = new ConcurrentHashMap<Chunk, Integer>();
+
+		File backup = new File(path + peerId + "/backup");
+
+		if (backup.listFiles() != null)
+			for (File fileEntry : backup.listFiles()) {
+				for (File entry : fileEntry.listFiles()) {
+					Chunk chunk = Chunk.deserialize(entry.getPath());
+					// TODO: o que fazer com replication degree
+					chunks.put(chunk, 1);
+				}
+			}
+
+		return new Storage(peerId, chunks);
+	}
+
+	/**
+	 * @param chunks the chunks to set
+	 */
+	public void setChunks(ConcurrentHashMap<Chunk, Integer> chunks) {
+		this.chunks = chunks;
+	}
+
+	/**
+	 * @return the storedFiles
+	 */
+	public ArrayList<StoredFile> getStoredFiles() {
+		return storedFiles;
+	}
+
+	/**
+	 * @param storedFiles the storedFiles to set
+	 */
+	public void setStoredFiles(ArrayList<StoredFile> storedFiles) {
+		this.storedFiles = storedFiles;
+	}
+
+	/**
+	 * @return the peerId
+	 */
+	public int getPeerId() {
+		return peerId;
+	}
+
+	/**
+	 * @param peerId the peerId to set
+	 */
+	public void setPeerId(int peerId) {
+		this.peerId = peerId;
+	}
+
+	public void deleteChunks(String fileId) {
+		chunks.entrySet().removeIf(entry -> entry.getKey().getFileId() == fileId);
+	}
 }

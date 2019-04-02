@@ -72,7 +72,7 @@ public class Chunk implements Serializable {
 	}
 
 	public String toString() {
-		return "Id: " + chunkNo + "\n Size (KBytes): " + bufferSize;
+		return "Id: " + chunkNo + "\nSize (KBytes): " + bufferSize/1000;
 	}
 
 	public void serialize(String path) {
