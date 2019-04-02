@@ -167,7 +167,8 @@ public class Peer implements RemoteInterface {
 			Chunk chunk) {
 
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.fileIdToAscii(fileId);
+		String file = fileId;
+		System.out.println(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String rep = Utils.numberToAscii(replicationDegree);
 		String chunkContent = "";
