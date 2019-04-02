@@ -49,16 +49,16 @@ public class Peer implements RemoteInterface {
 
 		if (new File("peer" + peerID).exists()) {
 			this.storage = Storage.readStorage("peer", this.peerID);
-		} else
+		} else{
 			this.storage = new Storage(this.peerID);
+			this.storage.initializeStorage();
+		}
 
 		for(Channel channel : channels.values()){
 			this.scheduler.execute(channel);
 		}
 
 		this.confirmationMessages = new ConcurrentHashMap<String, Integer>();
-
-		Runtime.getRuntime().addShutdownHook(new ShutdownHook(this));
 	}
 
 	public void addConfirmationMessage(String message, int peer) {

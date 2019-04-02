@@ -76,13 +76,15 @@ public class Chunk implements Serializable {
 	}
 
 	public void serialize(String path) {
+
+		String fullPath = path + "/chk" + chunkNo + ".ser";
 		try {
-			FileOutputStream fileOut = new FileOutputStream(path + "/chk" + chunkNo + ".ser");
+			FileOutputStream fileOut = new FileOutputStream(fullPath);
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
 			out.writeObject(this);
 			out.close();
 			fileOut.close();
-			System.out.printf("Serialized data is saved in /tmp/employee.ser");
+			System.out.printf("Serialized data is saved in " + fullPath);
 		} catch (IOException i) {
 			i.printStackTrace();
 		}
