@@ -281,5 +281,15 @@ public class Storage {
 
 	public void deleteChunks(String fileId) {
 		chunks.entrySet().removeIf(entry -> entry.getKey().getFileId() == fileId);
+
+		File folder = new File("peer" + peerId + "/backup/" + fileId);
+		System.out.println("crl: " + fileId);
+		String[] entries = folder.list();
+		for (String s : entries) {
+			File currentFile = new File(folder.getPath(), s);
+			currentFile.delete();
+		}
+
+		folder.delete();
 	}
 }

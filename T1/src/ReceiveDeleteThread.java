@@ -12,9 +12,7 @@ public class ReceiveDeleteThread implements Runnable {
 
 	@Override
 	public void run() {
-        
         peer.getStorage().deleteChunks(message[3]);
-
 	}
 
 }

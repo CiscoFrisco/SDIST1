@@ -38,23 +38,22 @@ public class Peer implements RemoteInterface {
 			String MDRaddress, String MDRport) throws IOException {
 		this.protocol_version = protocol_version;
 		this.peerID = peerID;
-		
+
 		this.channels = new ConcurrentHashMap<String, Channel>();
 		this.channels.put("MC", new Channel(MCaddress, MCport, this));
 		this.channels.put("MDB", new Channel(MDBaddress, MDBport, this));
 		this.channels.put("MDR", new Channel(MDRaddress, MDRport, this));
 
-
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
 
 		if (new File("peer" + peerID).exists()) {
 			this.storage = Storage.readStorage("peer", this.peerID);
-		} else{
+		} else {
 			this.storage = new Storage(this.peerID);
 			this.storage.initializeStorage();
 		}
 
-		for(Channel channel : channels.values()){
+		for (Channel channel : channels.values()) {
 			this.scheduler.execute(channel);
 		}
 
@@ -110,6 +109,7 @@ public class Peer implements RemoteInterface {
 	public String backup(String fileName, int replicationDegree) {
 		StoredFile file = new StoredFile(fileName, replicationDegree);
 		this.storage.addFile(file);
+		System.out.println("backup: " + file.getFileId());
 
 		ArrayList<Chunk> chunks = new ArrayList<Chunk>();
 
@@ -136,13 +136,13 @@ public class Peer implements RemoteInterface {
 
 		File file = new File(fileName);
 
-		if(!file.exists())
+		if (!file.exists())
 			return "File not found";
 
 		String fileId = StoredFile.encryptFileId(fileName);
-		int numChunks = (int) (file.length() / (64*1000));
+		int numChunks = (int) (file.length() / (64 * 1000));
 
-		for(int chunkNo = 0; chunkNo < numChunks; chunkNo++){
+		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
 			String message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
 			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
 		}
@@ -152,6 +152,18 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String delete(String fileName) throws RemoteException {
+
+		File file = new File(fileName);
+
+		if (!file.exists())
+			return "File not found";
+
+		String fileId = StoredFile.encryptFileId(fileName);
+		System.out.println("restore: " + fileId);
+
+		String message = buildDeleteMessage(protocol_version, peerID, fileId);
+		this.scheduler.execute(new MessageSenderThread(message, "MC", this));
+
 		return null;
 	}
 
@@ -169,12 +181,12 @@ public class Peer implements RemoteInterface {
 		for (StoredFile file : files) {
 			String info = file.toString();
 
-			state+=info;
+			state += info;
 		}
 
-		state+=storage.getChunksInfo();
+		state += storage.getChunksInfo();
 
-		state+=storage.getStorageInfo();
+		state += storage.getStorageInfo();
 
 		return state;
 	}
@@ -183,8 +195,7 @@ public class Peer implements RemoteInterface {
 			Chunk chunk) {
 
 		String sender = Utils.numberToAscii(senderId);
-		String file = fileId;
-		System.out.println(fileId);
+		String file = Utils.bytesToHex(fileId.getBytes());
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String rep = Utils.numberToAscii(replicationDegree);
 		String chunkContent = "";
@@ -211,8 +222,8 @@ public class Peer implements RemoteInterface {
 	}
 
 	public String buildStoredMessage(String version, int senderId, String fileId, int chunkNo) {
-		return "STORED" + version + " " + Utils.numberToAscii(senderId) + " " + Utils.bytesToHex(fileId.getBytes()) + " "
-				+ Utils.numberToAscii(chunkNo) + " \r\n\r\n";
+		return "STORED" + version + " " + Utils.numberToAscii(senderId) + " " + Utils.bytesToHex(fileId.getBytes())
+				+ " " + Utils.numberToAscii(chunkNo) + " \r\n\r\n";
 	}
 
 	public String buildChunkMessage(String version, int senderId, String fileId, int chunkNo, Chunk chunk) {
