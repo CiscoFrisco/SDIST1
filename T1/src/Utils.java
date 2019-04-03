@@ -39,7 +39,7 @@ public class Utils {
 		return num - 48;
 	}
 
-	private static String bytesToHex(byte[] hash) {
+	public static String bytesToHex(byte[] hash) {
 		StringBuffer hexString = new StringBuffer();
 		for (int i = 0; i < hash.length; i++) {
 			String hex = Integer.toHexString(0xff & hash[i]);
@@ -61,7 +61,7 @@ public class Utils {
 			// and return array of byte
 			byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
 
-			return bytesToHex(messageDigest);
+			return messageDigest.toString();
 		}
 		// For specifying wrong message digest algorithms
 		catch (NoSuchAlgorithmException e) {

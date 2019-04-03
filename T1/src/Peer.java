@@ -23,7 +23,7 @@ public class Peer implements RemoteInterface {
 	private ScheduledThreadPoolExecutor scheduler;
 	private Storage storage;
 	private String protocol_version;
-
+	private int numChunkMessages;
 	private ConcurrentHashMap<String, Integer> confirmationMessages;
 
 	public ScheduledThreadPoolExecutor getScheduler() {
@@ -59,6 +59,8 @@ public class Peer implements RemoteInterface {
 		}
 
 		this.confirmationMessages = new ConcurrentHashMap<String, Integer>();
+
+		this.numChunkMessages = 0;
 	}
 
 	public void addConfirmationMessage(String message, int peer) {
@@ -131,6 +133,20 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String restore(String fileName) throws RemoteException {
+
+		File file = new File(fileName);
+
+		if(!file.exists())
+			return "File not found";
+
+		String fileId = StoredFile.encryptFileId(fileName);
+		int numChunks = (int) (file.length() / (64*1000));
+
+		for(int chunkNo = 0; chunkNo < numChunks; chunkNo++){
+			String message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
+			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
+		}
+
 		return null;
 	}
 
@@ -187,7 +203,7 @@ public class Peer implements RemoteInterface {
 	public String buildGetChunkMessage(String version, int senderId, String fileId, int chunkNo) {
 
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.fileIdToAscii(fileId);
+		String file = Utils.bytesToHex(fileId.getBytes());
 		String chunkN = Utils.numberToAscii(chunkNo);
 
 		return "GETCHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";
@@ -195,13 +211,13 @@ public class Peer implements RemoteInterface {
 	}
 
 	public String buildStoredMessage(String version, int senderId, String fileId, int chunkNo) {
-		return "STORED" + version + " " + Utils.numberToAscii(senderId) + " " + Utils.fileIdToAscii(fileId) + " "
+		return "STORED" + version + " " + Utils.numberToAscii(senderId) + " " + Utils.bytesToHex(fileId.getBytes()) + " "
 				+ Utils.numberToAscii(chunkNo) + " \r\n\r\n";
 	}
 
 	public String buildChunkMessage(String version, int senderId, String fileId, int chunkNo, Chunk chunk) {
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.fileIdToAscii(fileId);
+		String file = Utils.bytesToHex(fileId.getBytes());
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String chunkContent = "";
 
@@ -217,14 +233,14 @@ public class Peer implements RemoteInterface {
 
 	public String buildDeleteMessage(String version, int senderId, String fileId) {
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.fileIdToAscii(fileId);
+		String file = Utils.bytesToHex(fileId.getBytes());
 
 		return "DELETE " + version + " " + sender + " " + file + " \r\n\r\n";
 	}
 
 	public String buildRemovedMessage(String version, int senderId, String fileId, int chunkNo) {
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.fileIdToAscii(fileId);
+		String file = Utils.bytesToHex(fileId.getBytes());
 		String chunkN = Utils.numberToAscii(chunkNo);
 
 		return "REMOVED " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";
@@ -242,5 +258,13 @@ public class Peer implements RemoteInterface {
 	public String getVersion() {
 		// TODO Auto-generated method stub
 		return protocol_version;
+	}
+
+	public void incNumChunkMessages() {
+		numChunkMessages++;
+	}
+
+	public int numChunkMessages() {
+		return numChunkMessages;
 	}
 }

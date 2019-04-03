@@ -12,8 +12,11 @@ public class ReceiveChunkThread implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		peer.incNumChunkMessages();
 
+		String[] split = this.message.split(" \r\n\r\n");
+
+		peer.getStorage().putRestoredChunk(split[3] + "-" + split[4], split[5]);
 	}
 
 }
