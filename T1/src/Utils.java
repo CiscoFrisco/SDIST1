@@ -50,7 +50,7 @@ public class Utils {
 		return hexString.toString();
 	}
 
-	public static String getSHA(String input) {
+	public static byte[] getSHA(String input) {
 		try {
 
 			// Static getInstance method is called with hashing SHA
@@ -61,7 +61,7 @@ public class Utils {
 			// and return array of byte
 			byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
 
-			return messageDigest.toString();
+			return messageDigest;
 		}
 		// For specifying wrong message digest algorithms
 		catch (NoSuchAlgorithmException e) {
@@ -69,6 +69,16 @@ public class Utils {
 
 			return null;
 		}
+	}
+
+	public static byte[] hexStringToByteArray(String s) {
+		int len = s.length();
+		byte[] data = new byte[len / 2];
+		for (int i = 0; i < len; i += 2) {
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+								 + Character.digit(s.charAt(i+1), 16));
+		}
+		return data;
 	}
 
 	public static String getHeader(String message) {

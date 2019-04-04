@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
@@ -130,10 +131,11 @@ public class Storage {
 		return info;
 	}
 
-	public boolean hasFile(String fileId) {
+	public boolean hasFile(byte[] fileId) {
 		for (StoredFile storedFile : storedFiles) {
-			if (storedFile.getFileId() == fileId)
+			if (Arrays.equals(storedFile.getFileId(), fileId)){
 				return true;
+			}
 		}
 
 		return false;
@@ -142,22 +144,22 @@ public class Storage {
 	public void addChunk(Chunk chunk) {
 		this.chunks.put(chunk, 1);
 
-		String fileId = chunk.getFileId();
+		byte[] fileId = chunk.getFileId();
 		String path = "peer" + peerId + "/backup/";
 
-		File filedir = new File(path + fileId);
+		File filedir = new File(path + Utils.bytesToHex(fileId));
 
 		if (!filedir.exists()) {
 			filedir.mkdir();
 		}
 
-		chunk.serialize(path.concat(fileId));
+		chunk.serialize(path.concat(Utils.bytesToHex(fileId)));
 	}
 
-	public Chunk getChunk(String fileId, int chunkNo) {
+	public Chunk getChunk(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
 				return key;
 			}
 		}
@@ -165,10 +167,10 @@ public class Storage {
 		return null;
 	}
 
-	public Chunk getChunksFromFile(String fileId, int chunkNo) {
+	public Chunk getChunksFromFile(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
 				return key;
 			}
 		}
@@ -176,10 +178,10 @@ public class Storage {
 		return null;
 	}
 
-	public int getReplicationDegree(String fileId, int chunkNo) {
+	public int getReplicationDegree(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
 				return entry.getValue();
 			}
 		}
@@ -187,10 +189,10 @@ public class Storage {
 		return -1;
 	}
 
-	public boolean contains(String fileId, int chunkNo) {
+	public boolean contains(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
 				return true;
 			}
 		}
@@ -198,22 +200,23 @@ public class Storage {
 		return false;
 	}
 
-	public void updateNumConfirmationMessages(String fileId, int chunkNo) {
+	public void updateNumConfirmationMessages(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && key.getFileId().equals(fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
 				chunks.replace(key, entry.getValue() + 1);
 				return;
 			}
 		}
 	}
 
-	public boolean decrementReplicationDegree(String fileId, int chunkNo) {
+	public boolean decrementReplicationDegree(byte[] fileId, int chunkNo) {
 
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			if (entry.getKey().getFileId() == fileId && entry.getKey().getChunkNo() == chunkNo) {
-				Chunk chunk = entry.getKey();
-				int value = entry.getValue();
+			Chunk chunk = entry.getKey();
+			int value = entry.getValue();
+			if (Arrays.equals(chunk.getFileId(),fileId) && chunk.getChunkNo() == chunkNo) {
+
 
 				chunks.replace(chunk, value);
 				return true;
@@ -279,11 +282,10 @@ public class Storage {
 		this.peerId = peerId;
 	}
 
-	public void deleteChunks(String fileId) {
-		chunks.entrySet().removeIf(entry -> entry.getKey().getFileId() == fileId);
+	public void deleteChunks(byte[] fileId) {
+		chunks.entrySet().removeIf(entry -> Arrays.equals(entry.getKey().getFileId(),fileId));
 
-		File folder = new File("peer" + peerId + "/backup/" + fileId);
-		System.out.println("crl: " + fileId);
+		File folder = new File("peer" + peerId + "/backup/" + Utils.bytesToHex(fileId));
 		String[] entries = folder.list();
 		for (String s : entries) {
 			File currentFile = new File(folder.getPath(), s);

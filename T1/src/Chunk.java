@@ -11,13 +11,13 @@ public class Chunk implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 8102200653806457589L;
-	private String fileId;
+	private byte[] fileId;
 	private int chunkNo;
 	private byte[] buffer;
 	private int bufferSize;
 	private int desiredReplicationDegree;
 
-	public Chunk(String fileId, int chunkNo, byte[] buffer, int bufferSize, int desiredReplicationDegree) {
+	public Chunk(byte[] fileId, int chunkNo, byte[] buffer, int bufferSize, int desiredReplicationDegree) {
 		this.setFileId(fileId);
 		this.setChunkNo(chunkNo);
 		this.setBuffer(buffer);
@@ -63,11 +63,11 @@ public class Chunk implements Serializable {
 		this.chunkNo = chunkNo;
 	}
 
-	public String getFileId() {
+	public byte[] getFileId() {
 		return fileId;
 	}
 
-	public void setFileId(String fileId) {
+	public void setFileId(byte[] fileId) {
 		this.fileId = fileId;
 	}
 

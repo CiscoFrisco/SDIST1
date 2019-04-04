@@ -16,7 +16,9 @@ public class ReceivePutChunkThread implements Runnable {
 	@Override
 	public void run() {
 		int senderId = Utils.asciiToNumber(header[2]);
-		String fileId = header[3];
+
+		byte[] fileId = Utils.hexStringToByteArray(header[3]);
+
 		int chunkNo = Utils.asciiToNumber(header[4]);
 		int replicationDegree = Utils.asciiToNumber(header[5]);
 

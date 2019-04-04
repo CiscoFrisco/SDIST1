@@ -17,7 +17,7 @@ public class ReceiveGetChunkThread implements Runnable {
 		int waitTime = Utils.getRandomNumber(401);
 
 		int chunkNo = Integer.parseInt(header[4]);
-		String fileId = header[3];
+		byte[] fileId = header[3].getBytes();
 		if(peer.getStorage().contains(fileId, chunkNo)) {
 
 			Chunk chunk = peer.getStorage().getChunk(fileId, chunkNo);

@@ -63,16 +63,17 @@ public class Peer implements RemoteInterface {
 	}
 
 	public void addConfirmationMessage(String message, int peer) {
-
-		if (!confirmationMessages.containsKey(message))
+		System.out.println("add: " + message);
+		if (!confirmationMessages.containsKey(message)){
 			this.confirmationMessages.put(message, peer);
+		}
 	}
 
 	public int getNumConfirmationMessages(String message) {
-
+		System.out.println(message);
 		int num = 0;
 		for (String entry : confirmationMessages.keySet()) {
-			if (entry == message)
+			if (entry.equals(message))
 				num++;
 		}
 
@@ -109,7 +110,6 @@ public class Peer implements RemoteInterface {
 	public String backup(String fileName, int replicationDegree) {
 		StoredFile file = new StoredFile(fileName, replicationDegree);
 		this.storage.addFile(file);
-		System.out.println("backup: " + file.getFileId());
 
 		ArrayList<Chunk> chunks = new ArrayList<Chunk>();
 
@@ -139,7 +139,7 @@ public class Peer implements RemoteInterface {
 		if (!file.exists())
 			return "File not found";
 
-		String fileId = StoredFile.encryptFileId(fileName);
+		byte[] fileId = StoredFile.encryptFileId(fileName);
 		int numChunks = (int) (file.length() / (64 * 1000));
 
 		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
@@ -158,8 +158,7 @@ public class Peer implements RemoteInterface {
 		if (!file.exists())
 			return "File not found";
 
-		String fileId = StoredFile.encryptFileId(fileName);
-		System.out.println("restore: " + fileId);
+		byte[] fileId = StoredFile.encryptFileId(fileName);
 
 		String message = buildDeleteMessage(protocol_version, peerID, fileId);
 		this.scheduler.execute(new MessageSenderThread(message, "MC", this));
@@ -191,11 +190,11 @@ public class Peer implements RemoteInterface {
 		return state;
 	}
 
-	public String buildPutChunkMessage(String version, int senderId, String fileId, int chunkNo, int replicationDegree,
+	public String buildPutChunkMessage(String version, int senderId, byte[] fileId, int chunkNo, int replicationDegree,
 			Chunk chunk) {
 
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.bytesToHex(fileId.getBytes());
+		String file = Utils.bytesToHex(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String rep = Utils.numberToAscii(replicationDegree);
 		String chunkContent = "";
@@ -211,24 +210,24 @@ public class Peer implements RemoteInterface {
 				+ chunkContent;
 	}
 
-	public String buildGetChunkMessage(String version, int senderId, String fileId, int chunkNo) {
+	public String buildGetChunkMessage(String version, int senderId, byte[] fileId, int chunkNo) {
 
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.bytesToHex(fileId.getBytes());
+		String file = Utils.bytesToHex(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
 
 		return "GETCHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";
 
 	}
 
-	public String buildStoredMessage(String version, int senderId, String fileId, int chunkNo) {
-		return "STORED" + version + " " + Utils.numberToAscii(senderId) + " " + Utils.bytesToHex(fileId.getBytes())
+	public String buildStoredMessage(String version, int senderId, byte[] fileId, int chunkNo) {
+		return "STORED " + version + " " + Utils.numberToAscii(senderId) + " " + Utils.bytesToHex(fileId)
 				+ " " + Utils.numberToAscii(chunkNo) + " \r\n\r\n";
 	}
 
-	public String buildChunkMessage(String version, int senderId, String fileId, int chunkNo, Chunk chunk) {
+	public String buildChunkMessage(String version, int senderId, byte[] fileId, int chunkNo, Chunk chunk) {
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.bytesToHex(fileId.getBytes());
+		String file = Utils.bytesToHex(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String chunkContent = "";
 
@@ -242,16 +241,16 @@ public class Peer implements RemoteInterface {
 		return "CHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n" + chunkContent;
 	}
 
-	public String buildDeleteMessage(String version, int senderId, String fileId) {
+	public String buildDeleteMessage(String version, int senderId, byte[] fileId) {
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.bytesToHex(fileId.getBytes());
+		String file = Utils.bytesToHex(fileId);
 
 		return "DELETE " + version + " " + sender + " " + file + " \r\n\r\n";
 	}
 
-	public String buildRemovedMessage(String version, int senderId, String fileId, int chunkNo) {
+	public String buildRemovedMessage(String version, int senderId, byte[] fileId, int chunkNo) {
 		String sender = Utils.numberToAscii(senderId);
-		String file = Utils.bytesToHex(fileId.getBytes());
+		String file = Utils.bytesToHex(fileId);
 		String chunkN = Utils.numberToAscii(chunkNo);
 
 		return "REMOVED " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n";

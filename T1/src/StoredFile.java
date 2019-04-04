@@ -20,7 +20,7 @@ class StoredFile implements Serializable {
 	 */
 	private static final long serialVersionUID = -8932985840046828L;
 	private String fileName;
-	private String fileId;
+	private byte[] fileId;
 	private int replicationDegree;
 
 	public StoredFile(String fileName, int replicationDegree) {
@@ -30,7 +30,7 @@ class StoredFile implements Serializable {
 		this.fileId = encryptFileId(fileName);
 	}
 
-	public static String encryptFileId(String fileName) {
+	public static byte[] encryptFileId(String fileName) {
 
 		String dateModified = "", owner = "";
 
@@ -68,7 +68,7 @@ class StoredFile implements Serializable {
 		return chunks;
 	}
 
-	public String getFileId() {
+	public byte[] getFileId() {
 		return fileId;
 	}
 

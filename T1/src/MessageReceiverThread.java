@@ -12,16 +12,12 @@ public class MessageReceiverThread implements Runnable {
 	@Override
 	public void run() {
 
-		String header = Utils.getHeader(message);
-
 		String[] splitHeader = message.split(" ");
 
 		for (int i = 0; i < splitHeader.length; i++) {
 			splitHeader[i] = splitHeader[i].trim();
 		}
-
 		System.out.println(splitHeader[0]);
-
 		switch (splitHeader[0]) {
 		case "PUTCHUNK":
 			peer.getScheduler().execute(new ReceivePutChunkThread(splitHeader, Utils.getChunkContent(message), peer));

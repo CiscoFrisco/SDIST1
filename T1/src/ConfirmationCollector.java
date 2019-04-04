@@ -21,7 +21,6 @@ public class ConfirmationCollector implements Runnable {
 	public void run() {
 		
 		String[] split = Utils.getHeader(chunk_msg).split(" ");
-		
 		if(this.peer.getNumConfirmationMessages(split[3] + "-" + split[4]) < replicationDegree && numTries < MAX_TRIES) {
 			peer.getScheduler().execute(new MessageSenderThread(chunk_msg, "MDB", peer));
 			peer.getScheduler().schedule(new ConfirmationCollector(peer, chunk_msg, timeout*2, numTries + 1, replicationDegree), timeout*2, TimeUnit.SECONDS);
