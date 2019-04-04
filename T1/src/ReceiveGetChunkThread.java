@@ -13,13 +13,11 @@ public class ReceiveGetChunkThread implements Runnable {
 
 	@Override
 	public void run() {
-	
 		int waitTime = Utils.getRandomNumber(401);
-
-		int chunkNo = Integer.parseInt(header[4]);
-		byte[] fileId = header[3].getBytes();
+		int chunkNo = Utils.asciiToNumber(header[4]);
+		
+		byte[] fileId = Utils.hexStringToByteArray(header[3]);
 		if(peer.getStorage().contains(fileId, chunkNo)) {
-
 			Chunk chunk = peer.getStorage().getChunk(fileId, chunkNo);
 
 			String msg = peer.buildChunkMessage(peer.getVersion(), peer.getId(), fileId, chunkNo, chunk);

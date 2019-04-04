@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.Map;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
@@ -25,6 +26,9 @@ public class Peer implements RemoteInterface {
 	private String protocol_version;
 	private int numChunkMessages;
 	private ConcurrentHashMap<String, Integer> confirmationMessages;
+	private CountDownLatch latch;
+
+	private String restoredFile;
 
 	public ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
@@ -43,8 +47,9 @@ public class Peer implements RemoteInterface {
 		this.channels.put("MC", new Channel(MCaddress, MCport, this));
 		this.channels.put("MDB", new Channel(MDBaddress, MDBport, this));
 		this.channels.put("MDR", new Channel(MDRaddress, MDRport, this));
+		this.restoredFile = null;
 
-		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(10);
+		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(20);
 
 		if (new File("peer" + peerID).exists()) {
 			this.storage = Storage.readStorage("peer", this.peerID);
@@ -133,21 +138,43 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String restore(String fileName) throws RemoteException {
-
+		
 		File file = new File(fileName);
 
 		if (!file.exists())
 			return "File not found";
 
 		byte[] fileId = StoredFile.encryptFileId(fileName);
-		int numChunks = (int) (file.length() / (64 * 1000));
+		int numChunks = (int) Math.ceil((double) file.length() / (64 * 1000));
 
+		//save fileId to compare when receiving chunks
+		this.restoredFile = Utils.bytesToHex(fileId);
+		
+		this.latch = new CountDownLatch(numChunks);
+		
 		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
 			String message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
 			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
 		}
-
-		return null;
+		
+		try {
+			this.latch.await();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		//storage.restoreFile(Utils.bytesToHex(fileId), fileName);
+		return "sup yo";
+	}
+	
+	public void flagChunkReceived() {
+		System.out.println("CountingDown");
+		this.latch.countDown();
+	}
+	
+	public String getRestoredFile() {
+		return this.restoredFile;
 	}
 
 	@Override

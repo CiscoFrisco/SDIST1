@@ -15,12 +15,11 @@ class TestApp {
     }
 
     public static boolean validateArguments(String[] args) {
-        if (args.length < 2 || args.length > 4) {
+    	if (args.length < 2 || args.length > 4) {
             System.err.println("ERROR: Invalid number of arguments!");
             printUsage();
             return false;
         }
-
         switch (args[1]) {
         case "BACKUP":
             if (args.length != 4) {
