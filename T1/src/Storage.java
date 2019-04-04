@@ -35,6 +35,27 @@ public class Storage {
 		this.peerId = peerId;
 	}
 
+	public void addConfirmationMessage(byte[] fileId, int chunkNo, int peerId) {
+
+		for(StoredFile file : storedFiles){
+			if(Arrays.equals(file.getFileId(), fileId)){
+				file.addConfirmationMessage(chunkNo, peerId);
+				break;
+			}
+		}
+	}
+
+	public int getNumConfirmationMessages(byte[] fileId, int chunkNo) {
+		
+		for(StoredFile file : storedFiles){
+			if(Arrays.equals(file.getFileId(), fileId)){
+				return file.getPerceivedReplicationDegree(chunkNo);
+			}
+		}
+
+		return 0;
+	}
+
 	public void putRestoredChunk(String id, String chunkBody) {
 		this.restoredChunks.put(id, chunkBody);
 	}
@@ -124,9 +145,9 @@ public class Storage {
 	}
 
 	public String getStorageInfo() {
-		String info = "Storage capacity: " + capacity / 1000 + " KBytes\n";
+		String info = "STORAGE INFO\n Storage capacity: " + capacity / 1000 + " KBytes\n";
 
-		info += "Amount of storage used for chunks: " + getUsedSpace() + " KBytes";
+		info += " Amount of storage used for chunks: " + getUsedSpace() + " KBytes";
 
 		return info;
 	}
