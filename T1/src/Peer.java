@@ -52,9 +52,9 @@ public class Peer implements RemoteInterface {
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(20);
 
 		if (new File("peer" + peerID).exists()) {
-			this.storage = Storage.readStorage("peer", this.peerID);
+			this.storage = Storage.readStorage("peer", this);
 		} else {
-			this.storage = new Storage(this.peerID);
+			this.storage = new Storage(this);
 			this.storage.initializeStorage();
 		}
 
@@ -175,6 +175,9 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String reclaim(int space) throws RemoteException {
+
+		storage.reclaim(space);
+
 		return null;
 	}
 

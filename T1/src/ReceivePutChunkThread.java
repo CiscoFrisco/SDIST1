@@ -22,18 +22,15 @@ public class ReceivePutChunkThread implements Runnable {
 		int chunkNo = Utils.asciiToNumber(header[4]);
 		int replicationDegree = Utils.asciiToNumber(header[5]);
 
+		Storage storage = peer.getStorage();
+
 		// A peer cant store the chunks of its own files
-		if(peer.getId() == senderId) {
-			return;
-		}
-				
-		// If this peer already stored this chunk
-		if(peer.getStorage().contains(fileId, chunkNo)) {
+		if(peer.getId() == senderId || storage.contains(fileId, chunkNo) || !storage.isAvailable()) {
 			return;
 		}
 				
 		String stored = peer.buildStoredMessage(peer.getVersion(), peer.getId(), fileId, chunkNo);
-		peer.getStorage().addChunk(new Chunk(fileId, chunkNo, chunkContent.getBytes(),chunkContent.length(), replicationDegree));
+		storage.addChunk(new Chunk(fileId, chunkNo, chunkContent.getBytes(),chunkContent.length(), replicationDegree));
 		
 		int interval = Utils.getRandomNumber(401);
 		

@@ -13,8 +13,8 @@ public class ReceiveRemovedThread implements Runnable {
     @Override
     public void run() {
         Storage storage = peer.getStorage();
-        byte[] fileID = message[3].getBytes();
-        int chunkNo = Integer.parseInt(message[4]);
+        byte[] fileID = Utils.hexStringToByteArray(message[3]);
+        int chunkNo = Utils.asciiToNumber(message[4]);
         boolean decremented = storage.decrementReplicationDegree(fileID, chunkNo);
         Chunk chunk = storage.getChunk(fileID, chunkNo);
         int desiredReplicationDegree = chunk.getDesiredReplicationDegree();

@@ -7,38 +7,55 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+
 import java.util.Map;
 
 public class Storage {
 
 	private ConcurrentHashMap<Chunk, Integer> chunks;
 	private ConcurrentHashMap<String, String> restoredChunks;
+	private ConcurrentHashMap<String, Integer> reclaimedChunks;
 	private ArrayList<StoredFile> storedFiles;
-	private int peerId;
 	private int capacity;
+	private Peer peer;
 
-	public Storage(int peerId) {
+	public Storage(Peer peer) {
 		this.chunks = new ConcurrentHashMap<Chunk, Integer>();
 		this.restoredChunks = new ConcurrentHashMap<String, String>();
+		this.reclaimedChunks = new ConcurrentHashMap<String, Integer>();
+
 		this.storedFiles = new ArrayList<StoredFile>();
 
 		this.capacity = 2000 * 1000; // 2000 KBytes
 
-		this.peerId = peerId;
+		this.peer = peer;
 	}
 
-	public Storage(int peerId, ConcurrentHashMap<Chunk, Integer> chunks) {
+	public Storage(Peer peer, ConcurrentHashMap<Chunk, Integer> chunks) {
 		this.chunks = chunks;
 		this.storedFiles = new ArrayList<StoredFile>();
+		this.reclaimedChunks = new ConcurrentHashMap<String, Integer>();
 
-		this.peerId = peerId;
+		this.peer = peer;
+	}
+
+	public void addReclaimedChunk(String fileId, int chunkNo){
+		reclaimedChunks.put(fileId, chunkNo);
+	}
+
+	public boolean hasReclaimedChunk(String fileId, int chunkNo){
+		return reclaimedChunks.get(fileId).equals(chunkNo);
 	}
 
 	public void addConfirmationMessage(byte[] fileId, int chunkNo, int peerId) {
 
-		for(StoredFile file : storedFiles){
-			if(Arrays.equals(file.getFileId(), fileId)){
+		for (StoredFile file : storedFiles) {
+			if (Arrays.equals(file.getFileId(), fileId)) {
 				file.addConfirmationMessage(chunkNo, peerId);
 				break;
 			}
@@ -46,9 +63,9 @@ public class Storage {
 	}
 
 	public int getNumConfirmationMessages(byte[] fileId, int chunkNo) {
-		
-		for(StoredFile file : storedFiles){
-			if(Arrays.equals(file.getFileId(), fileId)){
+
+		for (StoredFile file : storedFiles) {
+			if (Arrays.equals(file.getFileId(), fileId)) {
 				return file.getPerceivedReplicationDegree(chunkNo);
 			}
 		}
@@ -87,7 +104,7 @@ public class Storage {
 	}
 
 	public void restoreFile(String fileId, String fileName) {
-		File file = new File("peer" + peerId + "/restore/" + fileName);
+		File file = new File("peer" + peer.getId() + "/restore/" + fileName);
 		ConcurrentHashMap<Integer, byte[]> chunks = getChunks(fileId);
 
 		try {
@@ -105,7 +122,7 @@ public class Storage {
 	}
 
 	public void initializeStorage() {
-		String path = "peer" + peerId;
+		String path = "peer" + peer.getId();
 
 		File directory = new File(path);
 		File backup = new File(path.concat("/backup"));
@@ -133,7 +150,7 @@ public class Storage {
 	public int getUsedSpace() {
 		int space = 0;
 
-		File backup = new File("peer" + peerId + "/backup");
+		File backup = new File("peer" + peer.getId() + "/backup");
 
 		for (File fileFolder : backup.listFiles()) {
 			for (File chunk : fileFolder.listFiles()) {
@@ -154,7 +171,7 @@ public class Storage {
 
 	public boolean hasFile(byte[] fileId) {
 		for (StoredFile storedFile : storedFiles) {
-			if (Arrays.equals(storedFile.getFileId(), fileId)){
+			if (Arrays.equals(storedFile.getFileId(), fileId)) {
 				return true;
 			}
 		}
@@ -166,7 +183,7 @@ public class Storage {
 		this.chunks.put(chunk, 1);
 
 		byte[] fileId = chunk.getFileId();
-		String path = "peer" + peerId + "/backup/";
+		String path = "peer" + peer.getId() + "/backup/";
 
 		File filedir = new File(path + Utils.bytesToHex(fileId));
 
@@ -180,7 +197,7 @@ public class Storage {
 	public Chunk getChunk(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
 				return key;
 			}
 		}
@@ -191,7 +208,7 @@ public class Storage {
 	public Chunk getChunksFromFile(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
 				return key;
 			}
 		}
@@ -202,7 +219,7 @@ public class Storage {
 	public int getReplicationDegree(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
 				return entry.getValue();
 			}
 		}
@@ -213,7 +230,7 @@ public class Storage {
 	public boolean contains(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
 				return true;
 			}
 		}
@@ -224,7 +241,7 @@ public class Storage {
 	public void updateNumConfirmationMessages(byte[] fileId, int chunkNo) {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(),fileId)) {
+			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
 				chunks.replace(key, entry.getValue() + 1);
 				return;
 			}
@@ -236,8 +253,7 @@ public class Storage {
 		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
 			Chunk chunk = entry.getKey();
 			int value = entry.getValue();
-			if (Arrays.equals(chunk.getFileId(),fileId) && chunk.getChunkNo() == chunkNo) {
-
+			if (Arrays.equals(chunk.getFileId(), fileId) && chunk.getChunkNo() == chunkNo) {
 
 				chunks.replace(chunk, value);
 				return true;
@@ -251,10 +267,10 @@ public class Storage {
 		this.storedFiles.add(file);
 	}
 
-	public static Storage readStorage(String path, int peerId) {
+	public static Storage readStorage(String path, Peer peer) {
 		ConcurrentHashMap<Chunk, Integer> chunks = new ConcurrentHashMap<Chunk, Integer>();
 
-		File backup = new File(path + peerId + "/backup");
+		File backup = new File(path + peer.getId() + "/backup");
 
 		if (backup.listFiles() != null)
 			for (File fileEntry : backup.listFiles()) {
@@ -265,7 +281,7 @@ public class Storage {
 				}
 			}
 
-		return new Storage(peerId, chunks);
+		return new Storage(peer, chunks);
 	}
 
 	/**
@@ -289,24 +305,10 @@ public class Storage {
 		this.storedFiles = storedFiles;
 	}
 
-	/**
-	 * @return the peerId
-	 */
-	public int getPeerId() {
-		return peerId;
-	}
-
-	/**
-	 * @param peerId the peerId to set
-	 */
-	public void setPeerId(int peerId) {
-		this.peerId = peerId;
-	}
-
 	public void deleteChunks(byte[] fileId) {
-		chunks.entrySet().removeIf(entry -> Arrays.equals(entry.getKey().getFileId(),fileId));
+		chunks.entrySet().removeIf(entry -> Arrays.equals(entry.getKey().getFileId(), fileId));
 
-		File folder = new File("peer" + peerId + "/backup/" + Utils.bytesToHex(fileId));
+		File folder = new File("peer" + peer.getId() + "/backup/" + Utils.bytesToHex(fileId));
 		String[] entries = folder.list();
 		for (String s : entries) {
 			File currentFile = new File(folder.getPath(), s);
@@ -314,5 +316,40 @@ public class Storage {
 		}
 
 		folder.delete();
+	}
+
+	public void deleteChunk(Chunk chunk){
+		this.chunks.remove(chunk);
+
+		File file = new File("peer" + peer.getId() + "/backup/" + Utils.bytesToHex(chunk.getFileId()) + "/chk" + chunk.getChunkNo() +".ser");
+		file.delete();
+	}
+
+	public void reclaim(int space) {
+		capacity = space * 1000;
+
+		int spaceToReclaim = getUsedSpace() - capacity;
+
+		if (spaceToReclaim <= 0)
+			return;
+
+		List<Chunk> sortedChunks = new ArrayList<Chunk>(this.chunks.keySet());
+
+		Collections.sort(sortedChunks, Comparator.comparing(Chunk::getBufferSize));
+		Collections.reverse(sortedChunks);
+
+		for(Iterator<Chunk> i = sortedChunks.iterator(); spaceToReclaim > 0; ) {
+			Chunk chunk = (Chunk) i.next();	
+			deleteChunk(chunk);
+			String message = this.peer.buildRemovedMessage(peer.getVersion(), peer.getId(), chunk.getFileId(), chunk.getChunkNo());
+			this.peer.getScheduler().execute(new MessageSenderThread(message, "MC", this.peer));
+
+			spaceToReclaim -= chunk.getBufferSize();
+		}
+
+	}
+
+	public boolean isAvailable() {
+		return capacity > getUsedSpace();
 	}
 }
