@@ -40,9 +40,10 @@ public class Channel implements Runnable {
 		try {
 			Msocket = new MulticastSocket(this.port);
 			Msocket.joinGroup(address);
-			byte[] buf = new byte[65 * 1000];
 
 			while (true) {
+				byte[] buf = new byte[65 * 1000];
+				
 				DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
 				Msocket.receive(msgPacket);
 				int length = 0;
