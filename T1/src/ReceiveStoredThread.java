@@ -4,8 +4,8 @@ public class ReceiveStoredThread implements Runnable {
 	private String[] header;
 	private Peer peer;
 
-	public ReceiveStoredThread(String[] header, Peer peer) {
-		this.header = header;
+	public ReceiveStoredThread(byte[] message, int length, Peer peer) {
+		this.header = Utils.getHeader(message);
 		this.peer = peer;
 	}
 

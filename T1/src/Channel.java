@@ -22,10 +22,10 @@ public class Channel implements Runnable {
 		}
 	}
 	
-	public void sendMessage(String msg) {
+	public void sendMessage(byte[] msg) {
 		try {
 			MulticastSocket socket = new MulticastSocket(this.port);
-			DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(), msg.getBytes().length, address, port);
+			DatagramPacket msgPacket = new DatagramPacket(msg, msg.length, address, port);
 
 			socket.send(msgPacket);
 			socket.close();
@@ -45,8 +45,16 @@ public class Channel implements Runnable {
 			while (true) {
 				DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
 				Msocket.receive(msgPacket);
-				String message = new String(buf, 0, buf.length).trim();
-				peer.getScheduler().execute(new MessageReceiverThread(message, peer));
+				int length = 0;
+				for(int i = buf.length - 1; i > 0; i--){
+					if (buf[i] != 0){
+						length = i + 1;
+						break;
+					}
+
+				}
+
+				peer.getScheduler().execute(new MessageReceiverThread(buf, length, peer));
 			}
 
 		} catch (IOException e) {

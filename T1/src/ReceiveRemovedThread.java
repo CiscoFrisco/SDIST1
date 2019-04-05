@@ -3,18 +3,18 @@ import java.util.concurrent.TimeUnit;
 public class ReceiveRemovedThread implements Runnable {
 
     private Peer peer;
-    private String message[];
+    private String header[];
 
-    public ReceiveRemovedThread(String message[], Peer peer) {
-        this.message = message;
+    public ReceiveRemovedThread(byte[] message, Peer peer) {
+        this.header = Utils.getHeader(message);
         this.peer = peer;
     }
 
     @Override
     public void run() {
         Storage storage = peer.getStorage();
-        byte[] fileID = message[3].getBytes();
-        int chunkNo = Integer.parseInt(message[4]);
+        byte[] fileID = header[3].getBytes();
+        int chunkNo = Integer.parseInt(header[4]);
         boolean decremented = storage.decrementReplicationDegree(fileID, chunkNo);
         Chunk chunk = storage.getChunk(fileID, chunkNo);
         int desiredReplicationDegree = chunk.getDesiredReplicationDegree();
@@ -24,7 +24,7 @@ public class ReceiveRemovedThread implements Runnable {
         if (decremented && storage.getReplicationDegree(fileID, chunkNo) < desiredReplicationDegree) {
             int waitTime = Utils.getRandomNumber(401);
 
-            String chunk_msg = peer.buildPutChunkMessage(peer.getVersion(), peer.getId(), fileID, chunkNo,
+            byte[] chunk_msg = peer.buildPutChunkMessage(peer.getVersion(), peer.getId(), fileID, chunkNo,
                     desiredReplicationDegree, chunk);
             peer.getScheduler().schedule(new MessageSenderThread(chunk_msg, "MDB", peer), waitTime,
                     TimeUnit.MILLISECONDS);

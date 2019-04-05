@@ -1,43 +1,41 @@
+import java.util.Arrays;
 
 public class MessageReceiverThread implements Runnable {
 
-	private String message;
+	private byte[] message;
 	private Peer peer;
+	private int length;
 
-	public MessageReceiverThread(String message, Peer peer) {
+	public MessageReceiverThread(byte[] message, int length, Peer peer) {
 		this.message = message;
+		this.length = length;
 		this.peer = peer;
 	}
 
 	@Override
 	public void run() {
 
-		String[] splitHeader = message.split(" ");
+		String messageType = new String(message);
+		messageType = messageType.substring(0, messageType.indexOf(" "));
 
-		for (int i = 0; i < splitHeader.length; i++) {
-			splitHeader[i] = splitHeader[i].trim();
-		}
-		System.out.println(splitHeader[0]);
-		
-		String[] split = message.split("\r\n\r\n");
-		switch (splitHeader[0]) {
+		switch (messageType) {
 		case "PUTCHUNK":
-			peer.getScheduler().execute(new ReceivePutChunkThread(splitHeader,split[1], peer));
+			peer.getScheduler().execute(new ReceivePutChunkThread(message, length, peer));
 			break;
 		case "STORED":
-			peer.getScheduler().execute(new ReceiveStoredThread(splitHeader, peer));
+			peer.getScheduler().execute(new ReceiveStoredThread(message, length, peer));
 			break;
 		case "GETCHUNK":
-			peer.getScheduler().execute(new ReceiveGetChunkThread(splitHeader, peer));
+			peer.getScheduler().execute(new ReceiveGetChunkThread(message, peer));
 			break;
 		case "CHUNK":
-			peer.getScheduler().execute(new ReceiveChunkThread(message, peer));
+			peer.getScheduler().execute(new ReceiveChunkThread(message, length, peer));
 			break;
 		case "DELETE":
-			peer.getScheduler().execute(new ReceiveDeleteThread(splitHeader, peer));
+			peer.getScheduler().execute(new ReceiveDeleteThread(message, peer));
 			break;
 		case "REMOVE":
-			peer.getScheduler().execute(new ReceiveRemovedThread(splitHeader, peer));
+			peer.getScheduler().execute(new ReceiveRemovedThread(message, peer));
 			break;
 		default:
 			break;

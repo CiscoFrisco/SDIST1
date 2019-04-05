@@ -13,14 +13,14 @@ import java.util.Map;
 public class Storage {
 
 	private ConcurrentHashMap<Chunk, Integer> chunks;
-	private ConcurrentHashMap<String, String> restoredChunks;
+	private ConcurrentHashMap<String, byte[]> restoredChunks;
 	private ArrayList<StoredFile> storedFiles;
 	private int peerId;
 	private int capacity;
 
 	public Storage(int peerId) {
 		this.chunks = new ConcurrentHashMap<Chunk, Integer>();
-		this.restoredChunks = new ConcurrentHashMap<String, String>();
+		this.restoredChunks = new ConcurrentHashMap<String, byte[]>();
 		this.storedFiles = new ArrayList<StoredFile>();
 
 		this.capacity = 2000 * 1000; // 2000 KBytes
@@ -31,7 +31,7 @@ public class Storage {
 	public Storage(int peerId, ConcurrentHashMap<Chunk, Integer> chunks) {
 		this.chunks = chunks;
 		this.storedFiles = new ArrayList<StoredFile>();
-		this.restoredChunks = new ConcurrentHashMap<String, String>();
+		this.restoredChunks = new ConcurrentHashMap<String, byte[]>();
 
 		this.peerId = peerId;
 	}
@@ -57,7 +57,7 @@ public class Storage {
 		return 0;
 	}
 
-	public void putRestoredChunk(String id, String chunkBody) {
+	public void putRestoredChunk(String id, byte[] chunkBody) {
 		this.restoredChunks.put(id, chunkBody);
 	}
 
@@ -77,10 +77,10 @@ public class Storage {
 
 		ConcurrentHashMap<Integer, byte[]> chunks = new ConcurrentHashMap<Integer, byte[]>();
 
-		for (Map.Entry<String, String> entry : restoredChunks.entrySet()) {
+		for (Map.Entry<String, byte[]> entry : restoredChunks.entrySet()) {
 			String key = entry.getKey();
 			if (key.contains(fileId)) {
-				chunks.put(Integer.parseInt(key.substring(key.indexOf("-") + 1)), entry.getValue().getBytes());
+				chunks.put(Integer.parseInt(key.substring(key.indexOf("-") + 1)), entry.getValue());
 			}
 		}
 
@@ -88,8 +88,8 @@ public class Storage {
 	}
 
 	public void restoreFile(String fileId, String fileName) {
-		String path = "peer" + peerId + "\\restore\\"+ fileName;
-		System.out.println("|" + path +"|");
+		// TODO: windows vs linux filepaths
+		String path = "peer" + peerId + "/restore/"+ fileName;
 		File file = new File(path);
 		ConcurrentHashMap<Integer, byte[]> chunks = getChunks(fileId);
 
@@ -98,7 +98,6 @@ public class Storage {
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
 
 			for (byte[] bytes : chunks.values()) {
-				System.out.println("yo" + bytes.length);
 				bos.write(bytes);
 			}
 

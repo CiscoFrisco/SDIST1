@@ -9,7 +9,39 @@ import java.util.regex.Pattern;
 public class Utils {
 
 	public static void main(String[] args) {
-		System.out.println(asciiToNumber("50"));
+
+	}
+
+	public static byte[] getChunkContent(byte[] message, int length){
+
+		byte[] chunkContent = new byte[64*1000];
+
+		for (int i = 0; i < message.length; i++) {
+			if ((int) message[i] == 13 && (int)message[i + 1] == 10 && (int)message[i + 2] == 13
+					&& (int)message[i + 3] == 10) {
+						chunkContent = new byte[length - i - 4];
+				System.arraycopy(message, i + 4, chunkContent, 0, length - i - 4);
+				break;
+			}
+		}
+
+		return chunkContent;
+	}
+
+	public static String[] getHeader(byte[] message){
+
+		byte[] header = new byte[1000];
+
+		for (int i = 0; i < message.length; i++) {
+			if ((int) message[i] == 13 && (int)message[i + 1] == 10 && (int)message[i + 2] == 13
+					&& (int)message[i + 3] == 10) {
+						header = new byte[i];
+				System.arraycopy(message, 0, header, 0, i);
+				break;
+			}
+		}
+
+		return new String(header).split(" ");
 	}
 
 	public static String numberToAscii(int number) {
@@ -52,6 +84,14 @@ public class Utils {
 		return hexString.toString();
 	}
 
+	public static byte[] concatenateArrays(byte[] a, byte[] b) {
+		byte[] c = new byte[a.length + b.length];
+		System.arraycopy(a, 0, c, 0, a.length);
+		System.arraycopy(b, 0, c, a.length, b.length);
+
+		return c;
+	}
+
 	public static byte[] getSHA(String input) {
 		try {
 
@@ -77,8 +117,7 @@ public class Utils {
 		int len = s.length();
 		byte[] data = new byte[len / 2];
 		for (int i = 0; i < len; i += 2) {
-			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-								 + Character.digit(s.charAt(i+1), 16));
+			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
 		}
 		return data;
 	}

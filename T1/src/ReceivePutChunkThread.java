@@ -4,12 +4,14 @@ import java.util.concurrent.TimeUnit;
 public class ReceivePutChunkThread implements Runnable {
 	
 	private String[] header;
-	private String chunkContent;
+	private byte[] chunkContent;
 	private Peer peer;
 	
-	public ReceivePutChunkThread(String[] header, String chunkContent, Peer peer) {
-		this.header = header;
-		this.chunkContent = chunkContent;
+	public ReceivePutChunkThread(byte[] message, int length, Peer peer) {
+
+		this.header = Utils.getHeader(message);
+
+		this.chunkContent = Utils.getChunkContent(message, length);
 		this.peer = peer;
 	}
 
@@ -31,10 +33,9 @@ public class ReceivePutChunkThread implements Runnable {
 		if(peer.getStorage().contains(fileId, chunkNo)) {
 			return;
 		}
-				
-		String stored = peer.buildStoredMessage(peer.getVersion(), peer.getId(), fileId, chunkNo);
-		peer.getStorage().addChunk(new Chunk(fileId, chunkNo, chunkContent.getBytes(),chunkContent.length(), replicationDegree));
-		System.out.println("ReceivePUT(" + chunkNo + "): " + chunkContent.length());
+		System.out.println("receive: " + chunkContent.length);
+		byte[] stored = peer.buildStoredMessage(peer.getVersion(), peer.getId(), fileId, chunkNo);
+		peer.getStorage().addChunk(new Chunk(fileId, chunkNo, chunkContent, chunkContent.length, replicationDegree));
 		int interval = Utils.getRandomNumber(401);
 		
 		peer.getScheduler().schedule(new MessageSenderThread(stored,"MC", peer), interval, TimeUnit.MILLISECONDS);

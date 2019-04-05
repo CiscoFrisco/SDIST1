@@ -1,11 +1,11 @@
 public class MessageSenderThread implements Runnable {
 	
-	private String message;
+	private byte[] message;
 	private String channel;
 	private Peer peer;
 	private int numChunkMessages;
 	
-	public MessageSenderThread(String message, String channel, Peer peer){
+	public MessageSenderThread(byte[] message, String channel, Peer peer){
 		this.message = message;
 		this.channel = channel;
 		this.peer = peer;
@@ -14,8 +14,8 @@ public class MessageSenderThread implements Runnable {
 
 	@Override
 	public void run() {
-
-		if(this.message.substring(0, 5).equals("CHUNK") && peer.numChunkMessages() != numChunkMessages)
+		
+		if(new String(message).substring(0, 5).equals("CHUNK") && peer.numChunkMessages() != numChunkMessages)
 			return;
 
 		peer.getChannel(this.channel).sendMessage(this.message);

@@ -3,7 +3,7 @@
 version=$1
 numPeers=$2
 
-if [ $# -ne 3 ]; then
+if [ $# -ne 2 ]; then
     echo "Usage: $0 <version> <number of peers>"
     exit 1
 fi
