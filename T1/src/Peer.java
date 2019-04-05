@@ -118,7 +118,7 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String restore(String fileName) throws RemoteException {
-		
+
 		File file = new File(fileName);
 
 		if (!file.exists())
@@ -129,30 +129,31 @@ public class Peer implements RemoteInterface {
 
 		//save fileId to compare when receiving chunks
 		this.restoredFile = Utils.bytesToHex(fileId);
-		
-		this.latch = new CountDownLatch(numChunks);
-		
+
+
 		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
+			this.latch = new CountDownLatch(1);
+
 			String message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
 			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
+
+			try {
+				this.latch.await();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		
-		try {
-			this.latch.await();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		//storage.restoreFile(Utils.bytesToHex(fileId), fileName);
+
+		fileName = fileName.substring(fileName.lastIndexOf('\\') + 1);
+		storage.restoreFile(Utils.bytesToHex(fileId), fileName);
 		return "sup yo";
 	}
-	
+
 	public void flagChunkReceived() {
-		System.out.println("CountingDown");
 		this.latch.countDown();
 	}
-	
+
 	public String getRestoredFile() {
 		return this.restoredFile;
 	}
@@ -206,15 +207,13 @@ public class Peer implements RemoteInterface {
 		String rep = Utils.numberToAscii(replicationDegree);
 		String chunkContent = "";
 
-		try {
-			chunkContent = new String(chunk.getBuffer(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
+		chunkContent = new String(chunk.getBuffer());
+		System.out.println("buildPut: " + chunkContent.length());
+
 
 		return "PUTCHUNK " + version + " " + sender + " " + file + " " + chunkN + " " + rep + " \r\n\r\n"
-				+ chunkContent;
+		+ chunkContent;
 	}
 
 	public String buildGetChunkMessage(String version, int senderId, byte[] fileId, int chunkNo) {
@@ -229,7 +228,7 @@ public class Peer implements RemoteInterface {
 
 	public String buildStoredMessage(String version, int senderId, byte[] fileId, int chunkNo) {
 		return "STORED " + version + " " + Utils.numberToAscii(senderId) + " " + Utils.bytesToHex(fileId)
-				+ " " + Utils.numberToAscii(chunkNo) + " \r\n\r\n";
+		+ " " + Utils.numberToAscii(chunkNo) + " \r\n\r\n";
 	}
 
 	public String buildChunkMessage(String version, int senderId, byte[] fileId, int chunkNo, Chunk chunk) {
@@ -238,12 +237,9 @@ public class Peer implements RemoteInterface {
 		String chunkN = Utils.numberToAscii(chunkNo);
 		String chunkContent = "";
 
-		try {
-			chunkContent = new String(chunk.getBuffer(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		chunkContent = new String(chunk.getBuffer());
+		
+		System.out.println("buildChunK" + chunkContent.length());
 
 		return "CHUNK " + version + " " + sender + " " + file + " " + chunkN + " \r\n\r\n" + chunkContent;
 	}

@@ -84,7 +84,7 @@ public class Chunk implements Serializable {
 			out.writeObject(this);
 			out.close();
 			fileOut.close();
-			System.out.printf("Serialized data is saved in " + fullPath);
+			System.out.println("Serialized data is saved in " + fullPath);
 		} catch (IOException i) {
 			i.printStackTrace();
 		}

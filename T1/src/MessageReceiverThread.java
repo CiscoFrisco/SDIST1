@@ -18,9 +18,11 @@ public class MessageReceiverThread implements Runnable {
 			splitHeader[i] = splitHeader[i].trim();
 		}
 		System.out.println(splitHeader[0]);
+		
+		String[] split = message.split("\r\n\r\n");
 		switch (splitHeader[0]) {
 		case "PUTCHUNK":
-			peer.getScheduler().execute(new ReceivePutChunkThread(splitHeader, Utils.getChunkContent(message), peer));
+			peer.getScheduler().execute(new ReceivePutChunkThread(splitHeader,split[1], peer));
 			break;
 		case "STORED":
 			peer.getScheduler().execute(new ReceiveStoredThread(splitHeader, peer));

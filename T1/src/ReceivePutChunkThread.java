@@ -34,7 +34,7 @@ public class ReceivePutChunkThread implements Runnable {
 				
 		String stored = peer.buildStoredMessage(peer.getVersion(), peer.getId(), fileId, chunkNo);
 		peer.getStorage().addChunk(new Chunk(fileId, chunkNo, chunkContent.getBytes(),chunkContent.length(), replicationDegree));
-		
+		System.out.println("ReceivePUT(" + chunkNo + "): " + chunkContent.length());
 		int interval = Utils.getRandomNumber(401);
 		
 		peer.getScheduler().schedule(new MessageSenderThread(stored,"MC", peer), interval, TimeUnit.MILLISECONDS);

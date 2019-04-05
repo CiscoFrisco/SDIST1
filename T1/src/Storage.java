@@ -31,6 +31,7 @@ public class Storage {
 	public Storage(int peerId, ConcurrentHashMap<Chunk, Integer> chunks) {
 		this.chunks = chunks;
 		this.storedFiles = new ArrayList<StoredFile>();
+		this.restoredChunks = new ConcurrentHashMap<String, String>();
 
 		this.peerId = peerId;
 	}
@@ -87,7 +88,9 @@ public class Storage {
 	}
 
 	public void restoreFile(String fileId, String fileName) {
-		File file = new File("peer" + peerId + "/restore/" + fileName);
+		String path = "peer" + peerId + "\\restore\\"+ fileName;
+		System.out.println("|" + path +"|");
+		File file = new File(path);
 		ConcurrentHashMap<Integer, byte[]> chunks = getChunks(fileId);
 
 		try {
@@ -95,6 +98,7 @@ public class Storage {
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
 
 			for (byte[] bytes : chunks.values()) {
+				System.out.println("yo" + bytes.length);
 				bos.write(bytes);
 			}
 

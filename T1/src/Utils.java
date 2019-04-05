@@ -3,6 +3,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
 
@@ -79,14 +81,6 @@ public class Utils {
 								 + Character.digit(s.charAt(i+1), 16));
 		}
 		return data;
-	}
-
-	public static String getHeader(String message) {
-		return message.substring(0, message.indexOf("\r\n"));
-	}
-
-	public static String getChunkContent(String message) {
-		return message.substring(message.indexOf("\r\n\r\n"));
 	}
 
 	public static int getRandomNumber(int ceil) {

@@ -18,8 +18,8 @@ public class ReceiveChunkThread implements Runnable {
 		String[] header = split[0].split(" ");
 
 		if(header[3].equals(peer.getRestoredFile())) {
-			System.out.println("HEY");
 			peer.getStorage().putRestoredChunk(header[3] + "-" + Utils.asciiToNumber(header[4]), split[1]);
+			System.out.println("restoring:" + split[1].length());
 			peer.flagChunkReceived();
 		}
 	}
