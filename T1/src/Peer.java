@@ -62,27 +62,7 @@ public class Peer implements RemoteInterface {
 			this.scheduler.execute(channel);
 		}
 
-		this.confirmationMessages = new ConcurrentHashMap<String, Integer>();
-
 		this.numChunkMessages = 0;
-	}
-
-	public void addConfirmationMessage(String message, int peer) {
-		System.out.println("add: " + message);
-		if (!confirmationMessages.containsKey(message)){
-			this.confirmationMessages.put(message, peer);
-		}
-	}
-
-	public int getNumConfirmationMessages(String message) {
-		System.out.println(message);
-		int num = 0;
-		for (String entry : confirmationMessages.keySet()) {
-			if (entry.equals(message))
-				num++;
-		}
-
-		return num;
 	}
 
 	public static void main(String[] args) {
@@ -202,7 +182,7 @@ public class Peer implements RemoteInterface {
 	public String state() throws RemoteException {
 
 		ArrayList<StoredFile> files = storage.getStoredFiles();
-		String state = "";
+		String state = "STORED FILES\n";
 
 		for (StoredFile file : files) {
 			String info = file.toString();
@@ -210,7 +190,7 @@ public class Peer implements RemoteInterface {
 			state += info;
 		}
 
-		state += storage.getChunksInfo();
+		state += "STORED CHUNKS\n" + storage.getChunksInfo();
 
 		state += storage.getStorageInfo();
 
