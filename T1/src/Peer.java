@@ -30,6 +30,8 @@ public class Peer implements RemoteInterface {
 	private CountDownLatch latch;
 
 	private String restoredFile;
+	
+	private char pathSeparator;
 
 	public ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
@@ -53,9 +55,9 @@ public class Peer implements RemoteInterface {
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(20);
 
 		if (new File("peer" + peerID).exists()) {
-			this.storage = Storage.readStorage("peer", this.peerID);
+			this.storage = Storage.readStorage("peer", this);
 		} else {
-			this.storage = new Storage(this.peerID);
+			this.storage = new Storage(this);
 			this.storage.initializeStorage();
 		}
 
@@ -64,6 +66,7 @@ public class Peer implements RemoteInterface {
 		}
 
 		this.numChunkMessages = 0;
+		this.pathSeparator = Utils.getCharSeparator();
 	}
 
 	public static void main(String[] args) {
@@ -145,7 +148,7 @@ public class Peer implements RemoteInterface {
 			}
 		}
 
-		fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+		fileName = fileName.substring(fileName.lastIndexOf(pathSeparator) + 1);
 		storage.restoreFile(Utils.bytesToHex(fileId), fileName);
 		return "sup yo";
 	}
@@ -176,6 +179,8 @@ public class Peer implements RemoteInterface {
 
 	@Override
 	public String reclaim(int space) throws RemoteException {
+		storage.reclaim(space);
+
 		return null;
 	}
 
@@ -297,5 +302,9 @@ public class Peer implements RemoteInterface {
 
 	public int numChunkMessages() {
 		return numChunkMessages;
+	}
+
+	public char getPathSeparator() {
+		return pathSeparator;
 	}
 }

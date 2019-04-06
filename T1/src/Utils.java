@@ -9,17 +9,17 @@ import java.util.regex.Pattern;
 public class Utils {
 
 	public static void main(String[] args) {
-
+		System.out.println(System.getProperty("os.name"));
 	}
 
-	public static byte[] getChunkContent(byte[] message, int length){
+	public static byte[] getChunkContent(byte[] message, int length) {
 
-		byte[] chunkContent = new byte[64*1000];
+		byte[] chunkContent = new byte[64 * 1000];
 
 		for (int i = 0; i < message.length; i++) {
-			if ((int) message[i] == 13 && (int)message[i + 1] == 10 && (int)message[i + 2] == 13
-					&& (int)message[i + 3] == 10) {
-						chunkContent = new byte[length - i - 4];
+			if ((int) message[i] == 13 && (int) message[i + 1] == 10 && (int) message[i + 2] == 13
+					&& (int) message[i + 3] == 10) {
+				chunkContent = new byte[length - i - 4];
 				System.arraycopy(message, i + 4, chunkContent, 0, length - i - 4);
 				break;
 			}
@@ -28,14 +28,14 @@ public class Utils {
 		return chunkContent;
 	}
 
-	public static String[] getHeader(byte[] message){
+	public static String[] getHeader(byte[] message) {
 
 		byte[] header = new byte[1000];
 
 		for (int i = 0; i < message.length; i++) {
-			if ((int) message[i] == 13 && (int)message[i + 1] == 10 && (int)message[i + 2] == 13
-					&& (int)message[i + 3] == 10) {
-						header = new byte[i];
+			if ((int) message[i] == 13 && (int) message[i + 1] == 10 && (int) message[i + 2] == 13
+					&& (int) message[i + 3] == 10) {
+				header = new byte[i];
 				System.arraycopy(message, 0, header, 0, i);
 				break;
 			}
@@ -43,6 +43,15 @@ public class Utils {
 
 		return new String(header).split(" ");
 	}
+
+	public static char getCharSeparator() {
+		String os = System.getProperty("os.name");
+
+		if(os.contains("win"))
+			return '\\';
+		
+		return '/';
+	}	
 
 	public static String numberToAscii(int number) {
 

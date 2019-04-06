@@ -77,7 +77,7 @@ public class Chunk implements Serializable {
 
 	public void serialize(String path) {
 
-		String fullPath = path + "/chk" + chunkNo + ".ser";
+		String fullPath = path + Utils.getCharSeparator() + "chk" + chunkNo + ".ser";
 		try {
 			FileOutputStream fileOut = new FileOutputStream(fullPath);
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
