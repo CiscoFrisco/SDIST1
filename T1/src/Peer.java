@@ -208,7 +208,9 @@ public class Peer implements RemoteInterface {
 
 		byte[] message = buildDeleteMessage(protocol_version, peerID, fileId);
 		this.scheduler.execute(new MessageSenderThread(message, "MC", this));
-		this.scheduler.schedule(new CollectDeleteAcksThread(fileId, this), Utils.getRandomNumber(401),
+		
+		if(protocol_version != "1.0")
+			this.scheduler.schedule(new CollectDeleteAcksThread(fileId, this), Utils.getRandomNumber(401),
 				TimeUnit.MILLISECONDS);
 
 		return null;
