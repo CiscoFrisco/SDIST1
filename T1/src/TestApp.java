@@ -15,13 +15,15 @@ class TestApp {
     }
 
     public static boolean validateArguments(String[] args) {
-    	if (args.length < 2 || args.length > 4) {
+        if (args.length < 2 || args.length > 4) {
             System.err.println("ERROR: Invalid number of arguments!");
             printUsage();
             return false;
         }
-        switch (args[1]) {
-        case "BACKUP":
+
+        String operation = args[1];
+
+        if (operation.contains("BACKUP")) {
             if (args.length != 4) {
                 System.err.println("ERROR: BACKUP takes 2 operands!");
                 printUsage();
@@ -34,22 +36,19 @@ class TestApp {
                 printUsage();
                 return false;
             }
-            break;
-        case "RESTORE":
+        } else if (operation.contains("RESTORE")) {
             if (args.length != 3) {
                 System.err.println("ERROR: RESTORE takes 1 operand!");
                 printUsage();
                 return false;
             }
-            break;
-        case "DELETE":
+        } else if (operation.contains("DELETE")) {
             if (args.length != 3) {
                 System.err.println("ERROR: RESTORE takes 1 operand!");
                 printUsage();
                 return false;
             }
-            break;
-        case "RECLAIM":
+        } else if (operation.equals("RECLAIM")) {
             if (args.length != 3) {
                 System.err.println("ERROR: RECLAIM takes 1 operand!");
                 printUsage();
@@ -62,15 +61,13 @@ class TestApp {
                 printUsage();
                 return false;
             }
-            break;
-        case "STATE":
+        } else if (operation.equals("STATE")) {
             if (args.length != 2) {
                 System.err.println("ERROR: STATE takes no arguments!");
                 printUsage();
                 return false;
             }
-            break;
-        default:
+        } else {
             System.err.println("ERROR: Invalid operation!");
             printUsage();
             return false;
@@ -80,33 +77,29 @@ class TestApp {
     }
 
     public static void main(String[] args) {
-        if(!validateArguments(args))
+        if (!validateArguments(args))
             return;
- 
+
         String remote_object_name = args[0];
-    
+
         try {
             Registry registry = LocateRegistry.getRegistry("localhost");
             RemoteInterface stub = (RemoteInterface) registry.lookup(remote_object_name);
             String response = "";
             String operation = args[1];
-            
-            if(operation.equals("BACKUP")) {
+
+            if (operation.contains("BACKUP")) {
                 response = stub.backup(args[2], Integer.parseInt(args[3]));
-            }
-            else if(operation.equals("RESTORE")){
+            } else if (operation.contains("RESTORE")) {
                 response = stub.restore(args[2]);
-            }
-            else if(operation.equals("DELETE")){
+            } else if (operation.contains("DELETE")) {
                 response = stub.delete(args[2]);
-            }
-            else if(operation.equals("RECLAIM")){
+            } else if (operation.contains("RECLAIM")) {
                 response = stub.reclaim(Integer.parseInt(args[2]));
-            }
-            else {
+            } else {
                 response = stub.state();
             }
-            
+
             System.out.println("response: " + response);
 
         } catch (Exception e) {
