@@ -348,7 +348,7 @@ public class Storage {
 
 		Collections.sort(sortedChunks, Comparator.comparing(Chunk::getBufferSize));
 		Collections.reverse(sortedChunks);
-
+		
 		for (Iterator<Chunk> i = sortedChunks.iterator(); spaceToReclaim > 0;) {
 			Chunk chunk = (Chunk) i.next();
 			deleteChunk(chunk);
@@ -358,7 +358,6 @@ public class Storage {
 
 			spaceToReclaim -= chunk.getBufferSize();
 		}
-
 	}
 
 	public boolean isAvailable() {

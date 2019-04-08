@@ -12,11 +12,21 @@ public class ReceiveRemovedThread implements Runnable {
 
     @Override
     public void run() {
-        Storage storage = peer.getStorage();
+    	System.out.println(peer.getId());	
+    	System.out.println(Integer.parseInt(header[2]));	
+
+    	if(peer.getId() == Integer.parseInt(header[2]))
+    		return;
+    	
+    	Storage storage = peer.getStorage();
         byte[] fileID = Utils.hexStringToByteArray(header[3]);
         int chunkNo = Utils.asciiToNumber(header[4]);
         boolean decremented = storage.decrementReplicationDegree(fileID, chunkNo);
         Chunk chunk = storage.getChunk(fileID, chunkNo);
+        
+        if(!decremented)
+        	return;
+        
         int desiredReplicationDegree = chunk.getDesiredReplicationDegree();
 
         //TODO: verificar rececao putchunk
@@ -26,6 +36,7 @@ public class ReceiveRemovedThread implements Runnable {
 
             byte[] chunk_msg = peer.buildPutChunkMessage(peer.getVersion(), peer.getId(), fileID, chunkNo,
                     desiredReplicationDegree, chunk);
+            System.out.println("SENDING PUTCHUNK...");
             peer.getScheduler().schedule(new MessageSenderThread(chunk_msg, "MDB", peer), waitTime,
                     TimeUnit.MILLISECONDS);
             peer.getScheduler().schedule(new ConfirmationCollector(peer, chunk_msg, 1, 1, desiredReplicationDegree),
