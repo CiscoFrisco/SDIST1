@@ -21,7 +21,7 @@ public class Peer implements RemoteInterface {
 	private int peerID;
 
 	private ConcurrentHashMap<String, Channel> channels;
-
+	private ConcurrentHashMap<String, Integer> numChunksStored;
 	private ScheduledThreadPoolExecutor scheduler;
 	private Storage storage;
 	private String protocol_version;
@@ -52,6 +52,8 @@ public class Peer implements RemoteInterface {
 		this.channels.put("MDR", new Channel(MDRaddress, MDRport, this));
 		this.restoredFile = null;
 
+		this.numChunksStored = new ConcurrentHashMap<String, Integer>();
+		
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(20);
 
 		if (new File("peer" + peerID).exists()) {
@@ -112,8 +114,8 @@ public class Peer implements RemoteInterface {
 		for (int i = 0; i < chunks.size(); i++) {
 			byte[] chunk_msg = buildPutChunkMessage(this.protocol_version, this.peerID, file.getFileId(), i,
 					replicationDegree, chunks.get(i));
-			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB", this));
-			this.scheduler.schedule(new ConfirmationCollector(this, chunk_msg, 1, 1, replicationDegree), 1,
+			this.scheduler.execute(new MessageSenderThread(chunk_msg, "MDB", this, "BACKUP"));
+			this.scheduler.schedule(new ConfirmationCollector(this, chunk_msg, 1, 1, replicationDegree, "BACKUP"), 1,
 					TimeUnit.SECONDS);
 		}
 
@@ -138,7 +140,7 @@ public class Peer implements RemoteInterface {
 			this.latch = new CountDownLatch(1);
 
 			byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
-			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
+			this.scheduler.execute(new MessageSenderThread(message, "MC", this, "RESTORE"));
 
 			try {
 				this.latch.await();
@@ -172,7 +174,7 @@ public class Peer implements RemoteInterface {
 		byte[] fileId = StoredFile.encryptFileId(fileName);
 
 		byte[] message = buildDeleteMessage(protocol_version, peerID, fileId);
-		this.scheduler.execute(new MessageSenderThread(message, "MC", this));
+		this.scheduler.execute(new MessageSenderThread(message, "MC", this, "DELETE"));
 
 		return null;
 	}
@@ -306,5 +308,28 @@ public class Peer implements RemoteInterface {
 
 	public char getPathSeparator() {
 		return pathSeparator;
+	}
+	
+	public void incNumChunksStored(String stored_key) {
+		System.out.println(getNumChunksStored(stored_key));
+		if(getNumChunksStored(stored_key) != 0) {
+			int currVal = numChunksStored.get(stored_key);
+			numChunksStored.replace(stored_key, ++currVal);
+		}
+		else {
+			numChunksStored.put(stored_key, 1);
+		}
+	}
+
+	public int getNumChunksStored(String stored_key) {
+		
+		for (Map.Entry<String, Integer> entry : numChunksStored.entrySet()) {
+			String key = entry.getKey();
+			if (key.equals(stored_key)) {
+				return entry.getValue();
+			}
+		}
+		
+		return 0;
 	}
 }

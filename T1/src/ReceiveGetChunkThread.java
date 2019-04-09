@@ -5,10 +5,12 @@ public class ReceiveGetChunkThread implements Runnable {
 
 	private Peer peer;
 	private String header[];
+	private String protocol;
 
-	public ReceiveGetChunkThread(byte[] message, Peer peer) {
+	public ReceiveGetChunkThread(byte[] message, Peer peer, String protocol) {
 		this.header = Utils.getHeader(message);
 		this.peer = peer;
+		this.protocol = protocol;
 	}
 
 	@Override
@@ -20,7 +22,7 @@ public class ReceiveGetChunkThread implements Runnable {
 		if(peer.getStorage().contains(fileId, chunkNo)) {
 			Chunk chunk = peer.getStorage().getChunk(fileId, chunkNo);
 			byte[] msg = peer.buildChunkMessage(peer.getVersion(), peer.getId(), fileId, chunkNo, chunk);
-			peer.getScheduler().schedule(new MessageSenderThread(msg,"MDR",peer), waitTime, TimeUnit.MILLISECONDS);
+			peer.getScheduler().schedule(new MessageSenderThread(msg,"MDR",peer, protocol), waitTime, TimeUnit.MILLISECONDS);
 		}
 
 	}

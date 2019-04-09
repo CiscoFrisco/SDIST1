@@ -354,7 +354,7 @@ public class Storage {
 			deleteChunk(chunk);
 			byte[] message = this.peer.buildRemovedMessage(peer.getVersion(), peer.getId(), chunk.getFileId(),
 					chunk.getChunkNo());
-			this.peer.getScheduler().execute(new MessageSenderThread(message, "MC", this.peer));
+			this.peer.getScheduler().execute(new MessageSenderThread(message, "MC", this.peer, "RECLAIM"));
 
 			spaceToReclaim -= chunk.getBufferSize();
 		}

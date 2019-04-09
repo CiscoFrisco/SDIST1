@@ -8,12 +8,14 @@ public class ConfirmationCollector implements Runnable {
 	private int numTries;
 	private int replicationDegree;
 	private Peer peer;
+	private String protocol;
 	
-	public ConfirmationCollector(Peer peer, byte[] chunk_msg, int timeout, int numTries, int replicationDegree) {
+	public ConfirmationCollector(Peer peer, byte[] chunk_msg, int timeout, int numTries, int replicationDegree, String protocol) {
 		this.peer = peer;
 		this.chunk_msg = chunk_msg;
 		this.timeout = timeout;
 		this.numTries = numTries;
+		this.protocol = protocol;
 		this.replicationDegree = replicationDegree;
 	}
 
@@ -22,8 +24,8 @@ public class ConfirmationCollector implements Runnable {
 		
 		String[] split = new String(chunk_msg).split(" ");
 		if(this.peer.getStorage().getNumConfirmationMessages(Utils.hexStringToByteArray(split[3]), Utils.asciiToNumber(split[4])) < replicationDegree && numTries < MAX_TRIES) {
-			peer.getScheduler().execute(new MessageSenderThread(chunk_msg, "MDB", peer));
-			peer.getScheduler().schedule(new ConfirmationCollector(peer, chunk_msg, timeout*2, numTries + 1, replicationDegree), timeout*2, TimeUnit.SECONDS);
+			peer.getScheduler().execute(new MessageSenderThread(chunk_msg, "MDB", peer, protocol));
+			peer.getScheduler().schedule(new ConfirmationCollector(peer, chunk_msg, timeout*2, numTries + 1, replicationDegree, protocol), timeout*2, TimeUnit.SECONDS);
 		}
 
 	}
