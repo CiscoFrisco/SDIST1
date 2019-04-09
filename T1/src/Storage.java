@@ -76,6 +76,10 @@ public class Storage {
 		this.restoredChunks.put(id, chunkBody);
 	}
 
+	public boolean hasRestoredChunk(String id){
+		return this.restoredChunks.containsKey(id);
+	}
+
 	public int getNumberRestoredChunks(String fileId) {
 
 		int number = 0;

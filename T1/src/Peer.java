@@ -143,7 +143,7 @@ public class Peer implements RemoteInterface {
 
 				byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
 				this.scheduler.execute(new MessageSenderThread(message, "MC", this));
-				this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket));
+				this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId));
 				try {
 					this.latch.await();
 				} catch (InterruptedException e) {
