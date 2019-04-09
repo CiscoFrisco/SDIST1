@@ -55,7 +55,7 @@ public class Channel implements Runnable {
 
 				}
 
-				peer.getScheduler().execute(new MessageReceiverThread(buf, length, peer));
+				peer.getScheduler().execute(new MessageReceiverThread(buf, length, peer,null));
 			}
 
 		} catch (IOException e) {

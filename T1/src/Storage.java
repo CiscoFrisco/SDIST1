@@ -296,6 +296,7 @@ public class Storage {
 					Chunk chunk = Chunk.deserialize(entry.getPath());
 					// TODO: o que fazer com replication degree
 					chunks.put(chunk, 1);
+					peer.incNumChunksStored(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo());
 				}
 			}
 

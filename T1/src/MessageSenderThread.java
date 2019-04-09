@@ -33,6 +33,10 @@ public class MessageSenderThread implements Runnable {
 
 		int currRepDegree = peer.getNumChunksStored(message_tokens[3] + "-" + Utils.asciiToNumber(message_tokens[4]));
 		
+		System.out.println(protocol);
+		System.out.println("currRepDegree:" + currRepDegree);
+		System.out.println("previousRepDegree:" + previousRepDegree);
+
 		if(currRepDegree != previousRepDegree && message_tokens[0].equals("PUTCHUNK") && this.protocol.equals("RECLAIM"))
 			return;
 		
