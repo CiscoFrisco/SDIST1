@@ -22,6 +22,7 @@ public class Storage {
 	private int capacity;
 	private Peer peer;
 	private ConcurrentHashMap<String, Integer> reclaimedChunks;
+	private ConcurrentHashMap<String, ArrayList<Integer>> confirmationMessages;
 	private String backupPath;
 	private String restorePath;
 
@@ -30,6 +31,7 @@ public class Storage {
 		this.restoredChunks = new ConcurrentHashMap<String, byte[]>();
 		this.reclaimedChunks = new ConcurrentHashMap<String, Integer>();
 		this.storedFiles = new ArrayList<StoredFile>();
+		this.confirmationMessages = new ConcurrentHashMap<String, ArrayList<Integer>>();
 
 		this.capacity = 2000 * 1000; // 2000 KBytes
 
@@ -53,6 +55,20 @@ public class Storage {
 
 	public void addConfirmationMessage(byte[] fileId, int chunkNo, int peerId) {
 
+		String key = Utils.bytesToHex(fileId) + "-" + chunkNo;
+		ArrayList<Integer> list;
+
+		if(confirmationMessages.containsKey(key)){
+			list = confirmationMessages.get(key);
+			list.add(peerId);
+			confirmationMessages.replace(key, list);
+		}
+		else{
+			list = new ArrayList<Integer>();
+			list.add(peerId);
+			confirmationMessages.put(key, list);
+		}
+
 		for (StoredFile file : storedFiles) {
 			if (Arrays.equals(file.getFileId(), fileId)) {
 				file.addConfirmationMessage(chunkNo, peerId);
@@ -62,14 +78,7 @@ public class Storage {
 	}
 
 	public int getNumConfirmationMessages(byte[] fileId, int chunkNo) {
-
-		for (StoredFile file : storedFiles) {
-			if (Arrays.equals(file.getFileId(), fileId)) {
-				return file.getPerceivedReplicationDegree(chunkNo);
-			}
-		}
-
-		return 0;
+		return confirmationMessages.get(Utils.bytesToHex(fileId) + "-" + chunkNo).size();
 	}
 
 	public void putRestoredChunk(String id, byte[] chunkBody) {
