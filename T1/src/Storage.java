@@ -133,6 +133,13 @@ public class Storage {
 		directory.mkdir();
 		backup.mkdir();
 		restore.mkdir();
+		File tasks = new File(path +"/tasks.txt");
+		try {
+			tasks.createNewFile();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public ConcurrentHashMap<Chunk, Integer> getChunks() {

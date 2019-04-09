@@ -12,9 +12,11 @@ import java.nio.file.StandardOpenOption;
 import java.rmi.RemoteException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.Map;
+import java.util.Vector;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
@@ -39,7 +41,7 @@ public class Peer implements RemoteInterface {
 
 	private char pathSeparator;
 
-	private ConcurrentHashMap<byte[], ArrayList<Integer>> deleteAcks;
+	private ConcurrentHashMap<byte[], Vector<Integer>> deleteAcks;
 
 	public ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
@@ -76,24 +78,19 @@ public class Peer implements RemoteInterface {
 		this.numChunkMessages = 0;
 		this.pathSeparator = Utils.getCharSeparator();
 
-		this.deleteAcks = new ConcurrentHashMap<byte[], ArrayList<Integer>>();
+		this.deleteAcks = new ConcurrentHashMap<byte[], Vector<Integer>>();
 
-		File tasks = new File("tasks.txt");
-		if (tasks.exists()) {
-
-		} else {
-			tasks.createNewFile();
-		}
+		readTasks();
 	}
 
 	public void readTasks() {
-		try (BufferedReader br = new BufferedReader(new FileReader("tasks.txt"))) {
+		try (BufferedReader br = new BufferedReader(new FileReader("peer" + peerID + "/tasks.txt"))) {
 			String line;
 			while ((line = br.readLine()) != null) {
-				storage.deleteChunks(line.split(" ")[1].getBytes());
+				storage.deleteChunks(Utils.hexStringToByteArray(line.split(" ")[1]));
 			}
 
-			PrintWriter writer = new PrintWriter("tasks.txt");
+			PrintWriter writer = new PrintWriter("peer" + peerID + "/tasks.txt");
 			writer.print("");
 			writer.close();
 		} catch (FileNotFoundException e) {
@@ -208,10 +205,10 @@ public class Peer implements RemoteInterface {
 
 		byte[] message = buildDeleteMessage(protocol_version, peerID, fileId);
 		this.scheduler.execute(new MessageSenderThread(message, "MC", this));
-		
-		if(protocol_version != "1.0")
+
+		if (protocol_version != "1.0")
 			this.scheduler.schedule(new CollectDeleteAcksThread(fileId, this), Utils.getRandomNumber(401),
-				TimeUnit.MILLISECONDS);
+					TimeUnit.MILLISECONDS);
 
 		return null;
 	}
@@ -358,10 +355,17 @@ public class Peer implements RemoteInterface {
 	}
 
 	public void addAckMesssage(byte[] fileId, int peerId) {
-		ArrayList<Integer> newList = deleteAcks.get(fileId);
-		newList.add(peerId);
+		Vector<Integer> newList = deleteAcks.get(fileId);
 
-		deleteAcks.replace(fileId, newList);
+		if (newList != null) {
+			newList.add(peerId);
+			deleteAcks.replace(fileId, newList);
+		} else {
+			newList = new Vector<Integer>();
+			newList.add(peerId);
+			deleteAcks.put(fileId, newList);
+		}
+
 	}
 
 	public void putIdlePeersTasks(byte[] fileId) {
@@ -369,17 +373,24 @@ public class Peer implements RemoteInterface {
 
 		for (File file : folder.listFiles()) {
 			String name = file.getName();
+
 			if (file.isDirectory() && file.getName().contains("peer")) {
 				int id = Character.getNumericValue(name.charAt(4));
 
-				if (!deleteAcks.get(fileId).contains(id))
-					putTask(fileId, id);
+				if (id != peerID) {
+					for (Map.Entry<byte[], Vector<Integer>> entry : deleteAcks.entrySet()) {
+						if (Arrays.equals(entry.getKey(), fileId) && !entry.getValue().contains(id)) {
+							putTask(fileId, id);
+						}
+					}
+				}
+
 			}
 		}
 	}
 
 	public void putTask(byte[] fileId, int peerId) {
-		String message = "DELETE " + new String(fileId);
+		String message = "DELETE " + Utils.bytesToHex(fileId);
 
 		try {
 			Files.write(Paths.get("peer" + peerId + "/tasks.txt"), message.getBytes(), StandardOpenOption.APPEND);

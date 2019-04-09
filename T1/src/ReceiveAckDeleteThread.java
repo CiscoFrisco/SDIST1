@@ -9,6 +9,7 @@ class ReceiveAckDeleteThread implements Runnable {
 
     @Override
     public void run() {
+
         if(peer.getId() != Utils.asciiToNumber(header[3])){
             return;
         }
