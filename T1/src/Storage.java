@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class Storage {
 
-	private ConcurrentHashMap<Chunk, Integer> chunks;
+	private ArrayList<Chunk> chunks;
 	private ConcurrentHashMap<String, byte[]> restoredChunks;
 	private ArrayList<StoredFile> storedFiles;
 	private int capacity;
@@ -27,7 +27,7 @@ public class Storage {
 	private String restorePath;
 
 	public Storage(Peer peer) {
-		this.chunks = new ConcurrentHashMap<Chunk, Integer>();
+		this.chunks = new ArrayList<Chunk>();
 		this.restoredChunks = new ConcurrentHashMap<String, byte[]>();
 		this.reclaimedChunks = new ConcurrentHashMap<String, Integer>();
 		this.storedFiles = new ArrayList<StoredFile>();
@@ -41,7 +41,7 @@ public class Storage {
 
 	}
 
-	public Storage(Peer peer, ConcurrentHashMap<Chunk, Integer> chunks) {
+	public Storage(Peer peer, ArrayList<Chunk> chunks) {
 		this.chunks = chunks;
 		this.storedFiles = new ArrayList<StoredFile>();
 		this.restoredChunks = new ConcurrentHashMap<String, byte[]>();
@@ -82,6 +82,7 @@ public class Storage {
 	}
 
 	public void putRestoredChunk(String id, byte[] chunkBody) {
+		System.out.println("RESTORING CHUNK...");
 		this.restoredChunks.put(id, chunkBody);
 	}
 
@@ -144,15 +145,15 @@ public class Storage {
 		restore.mkdir();
 	}
 
-	public ConcurrentHashMap<Chunk, Integer> getChunks() {
+	public ArrayList<Chunk> getChunks() {
 		return chunks;
 	}
 
 	public String getChunksInfo() {
 		String info = "";
 
-		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			info += entry.getKey().toString() + "\nPerceived replication degree: " + entry.getValue() + '\n';
+		for (Chunk entry : chunks) {
+			info += entry.toString() + "\nPerceived replication degree: " + entry.getPerceivedReplicationDegree() + '\n';
 		}
 
 		return info;
@@ -199,7 +200,7 @@ public class Storage {
 	}
 
 	public void addChunk(Chunk chunk) {
-		this.chunks.put(chunk, 1);
+		this.chunks.add(chunk);
 
 		byte[] fileId = chunk.getFileId();
 
@@ -213,10 +214,9 @@ public class Storage {
 	}
 
 	public Chunk getChunk(byte[] fileId, int chunkNo) {
-		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
-				return key;
+		for (Chunk entry : chunks) {
+			if (entry.getChunkNo() == chunkNo && Arrays.equals(entry.getFileId(), fileId)) {
+				return entry;
 			}
 		}
 
@@ -224,10 +224,9 @@ public class Storage {
 	}
 
 	public Chunk getChunksFromFile(byte[] fileId, int chunkNo) {
-		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
-				return key;
+		for (Chunk entry : chunks) {
+			if (entry.getChunkNo() == chunkNo && Arrays.equals(entry.getFileId(), fileId)) {
+				return entry;
 			}
 		}
 
@@ -235,10 +234,9 @@ public class Storage {
 	}
 
 	public int getReplicationDegree(byte[] fileId, int chunkNo) {
-		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
-				return entry.getValue();
+		for (Chunk entry : chunks) {
+			if (entry.getChunkNo() == chunkNo && Arrays.equals(entry.getFileId(), fileId)) {
+				return entry.getPerceivedReplicationDegree();
 			}
 		}
 
@@ -246,9 +244,8 @@ public class Storage {
 	}
 
 	public boolean contains(byte[] fileId, int chunkNo) {
-		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
+		for (Chunk entry : chunks) {
+			if (entry.getChunkNo() == chunkNo && Arrays.equals(entry.getFileId(), fileId)) {
 				return true;
 			}
 		}
@@ -257,10 +254,9 @@ public class Storage {
 	}
 
 	public void updateNumConfirmationMessages(byte[] fileId, int chunkNo) {
-		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			Chunk key = entry.getKey();
-			if (key.getChunkNo() == chunkNo && Arrays.equals(key.getFileId(), fileId)) {
-				chunks.replace(key, entry.getValue() + 1);
+		for (Chunk entry : chunks) {
+			if (entry.getChunkNo() == chunkNo && Arrays.equals(entry.getFileId(), fileId)) {
+				entry.updatePerceivedReplicationDegree(1);
 				return;
 			}
 		}
@@ -268,12 +264,10 @@ public class Storage {
 
 	public boolean decrementReplicationDegree(byte[] fileId, int chunkNo) {
 
-		for (Map.Entry<Chunk, Integer> entry : chunks.entrySet()) {
-			Chunk chunk = entry.getKey();
-			int value = entry.getValue();
-			if (Arrays.equals(chunk.getFileId(), fileId) && chunk.getChunkNo() == chunkNo) {
+		for (Chunk entry : chunks) {
+			if (Arrays.equals(entry.getFileId(), fileId) && entry.getChunkNo() == chunkNo) {
 
-				chunks.replace(chunk, value);
+				entry.updatePerceivedReplicationDegree(-1);
 				return true;
 			}
 		}
@@ -286,7 +280,7 @@ public class Storage {
 	}
 
 	public static Storage readStorage(String path, Peer peer) {
-		ConcurrentHashMap<Chunk, Integer> chunks = new ConcurrentHashMap<Chunk, Integer>();
+		ArrayList<Chunk> chunks = new ArrayList<Chunk>();
 
 		File backup = new File(path + peer.getId() + Utils.getCharSeparator() + "backup");
 
@@ -295,7 +289,7 @@ public class Storage {
 				for (File entry : fileEntry.listFiles()) {
 					Chunk chunk = Chunk.deserialize(entry.getPath());
 					// TODO: o que fazer com replication degree
-					chunks.put(chunk, 1);
+					chunks.add(chunk);
 //					peer.incNumChunksStored(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo());
 				}
 			}
@@ -306,7 +300,7 @@ public class Storage {
 	/**
 	 * @param chunks the chunks to set
 	 */
-	public void setChunks(ConcurrentHashMap<Chunk, Integer> chunks) {
+	public void setChunks(ArrayList<Chunk> chunks) {
 		this.chunks = chunks;
 	}
 
@@ -325,7 +319,7 @@ public class Storage {
 	}
 
 	public void deleteChunks(byte[] fileId) {
-		chunks.entrySet().removeIf(entry -> Arrays.equals(entry.getKey().getFileId(), fileId));
+		chunks.removeIf(entry -> Arrays.equals(entry.getFileId(), fileId));
 
 		File folder = new File(backupPath + Utils.bytesToHex(fileId));
 		String[] entries = folder.list();
@@ -354,7 +348,7 @@ public class Storage {
 		if (spaceToReclaim <= 0)
 			return;
 
-		List<Chunk> sortedChunks = new ArrayList<Chunk>(this.chunks.keySet());
+		List<Chunk> sortedChunks = new ArrayList<Chunk>(this.chunks);
 
 		Collections.sort(sortedChunks, Comparator.comparing(Chunk::getBufferSize));
 		Collections.reverse(sortedChunks);
@@ -364,7 +358,7 @@ public class Storage {
 			deleteChunk(chunk);
 			byte[] message = this.peer.buildRemovedMessage(peer.getVersion(), peer.getId(), chunk.getFileId(),
 					chunk.getChunkNo());
-			this.peer.getScheduler().execute(new MessageSenderThread(message, "MC", this.peer, "RECLAIM"));
+			this.peer.getScheduler().execute(new MessageSenderThread(message, "MC", this.peer));
 
 			spaceToReclaim -= chunk.getBufferSize();
 		}

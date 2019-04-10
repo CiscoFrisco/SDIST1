@@ -14,10 +14,11 @@ public class ReceiveChunkThread implements Runnable {
 
 	@Override
 	public void run() {
-		peer.incNumChunkMessages();
-
+		int chunkNo = Integer.parseInt(header[4]);
+		peer.incNumChunkMessages(header[3], chunkNo);
+		
 		if(header[3].equals(peer.getRestoredFile())) {
-			peer.getStorage().putRestoredChunk(header[3] + "-" + Utils.asciiToNumber(header[4]), chunkContent);
+			peer.getStorage().putRestoredChunk(header[3] + "-" + chunkNo, chunkContent);
 			peer.flagChunkReceived();
 		}
 	}

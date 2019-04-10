@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 public class Utils {
 
 	public static void main(String[] args) {
-		System.out.println(System.getProperty("os.name"));
+
 	}
 
 	public static byte[] getChunkContent(byte[] message, int length) {
@@ -41,46 +41,17 @@ public class Utils {
 			}
 		}
 
-		return new String(header).split(" ");
+		return new String(header, StandardCharsets.US_ASCII).split(" ");
 	}
 
 	public static char getCharSeparator() {
 		String os = System.getProperty("os.name");
 
-		if(os.contains("win"))
+		if(os.toLowerCase().contains("win"))
 			return '\\';
 		
 		return '/';
 	}	
-
-	public static String numberToAscii(int number) {
-
-		int digit = 0;
-		String ascii = "";
-
-		if (number == 0) {
-			return "48";
-		}
-
-		while (number > 0) {
-			digit = number % 10;
-			digit += 48;
-			ascii = ascii.concat(Integer.toString(digit));
-			number /= 10;
-		}
-
-		return ascii;
-	}
-
-	public static int asciiToNumber(String ascii) {
-
-		int num = 0;
-		for (int i = 0; i < ascii.length(); i++) {
-			num += Character.getNumericValue(ascii.charAt(i)) * (int) Math.pow(10, ascii.length() - i - 1);
-		}
-
-		return num - 48;
-	}
 
 	public static String bytesToHex(byte[] hash) {
 		StringBuffer hexString = new StringBuffer();
@@ -131,9 +102,9 @@ public class Utils {
 		return data;
 	}
 
-	public static int getRandomNumber(int ceil) {
-		Random random = new Random();
-		return random.nextInt(ceil);
+	public static int getRandomNumber(int low, int high) {		
+		Random r = new Random();
+		return r.nextInt(high-low) + low;
 	}
 
 }

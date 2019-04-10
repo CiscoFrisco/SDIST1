@@ -5,13 +5,11 @@ public class MessageReceiverThread implements Runnable {
 	private byte[] message;
 	private Peer peer;
 	private int length;
-	private String protocol;
 
-	public MessageReceiverThread(byte[] message, int length, Peer peer, String protocol) {
+	public MessageReceiverThread(byte[] message, int length, Peer peer) {
 		this.message = message;
 		this.length = length;
 		this.peer = peer;
-		this.protocol = protocol;
 	}
 
 	@Override
@@ -24,13 +22,13 @@ public class MessageReceiverThread implements Runnable {
 		
 		switch (messageType) {
 		case "PUTCHUNK":
-			peer.getScheduler().execute(new ReceivePutChunkThread(message, length, peer, protocol));
+			peer.getScheduler().execute(new ReceivePutChunkThread(message, length, peer));
 			break;
 		case "STORED":
 			peer.getScheduler().execute(new ReceiveStoredThread(message, length, peer));
 			break;
 		case "GETCHUNK":
-			peer.getScheduler().execute(new ReceiveGetChunkThread(message, peer, protocol));
+			peer.getScheduler().execute(new ReceiveGetChunkThread(message, peer));
 			break;
 		case "CHUNK":
 			peer.getScheduler().execute(new ReceiveChunkThread(message, length, peer));
@@ -39,7 +37,7 @@ public class MessageReceiverThread implements Runnable {
 			peer.getScheduler().execute(new ReceiveDeleteThread(message, peer));
 			break;
 		case "REMOVED":
-			peer.getScheduler().execute(new ReceiveRemovedThread(message, peer, protocol));
+			peer.getScheduler().execute(new ReceiveRemovedThread(message, peer));
 			break;
 		default:
 			break;

@@ -16,6 +16,7 @@ public class Chunk implements Serializable {
 	private byte[] buffer;
 	private int bufferSize;
 	private int desiredReplicationDegree;
+	private int perceivedReplicationDegree;
 
 	public Chunk(byte[] fileId, int chunkNo, byte[] buffer, int bufferSize, int desiredReplicationDegree) {
 		this.setFileId(fileId);
@@ -23,6 +24,7 @@ public class Chunk implements Serializable {
 		this.setBuffer(buffer);
 		this.setBufferSize(bufferSize);
 		this.setDesiredReplicationDegree(desiredReplicationDegree);
+		this.perceivedReplicationDegree = 1;
 	}
 
 	/**
@@ -108,6 +110,15 @@ public class Chunk implements Serializable {
 		}
 
 		return chunk;
+	}
+
+	public int getPerceivedReplicationDegree() {
+		// TODO Auto-generated method stub
+		return perceivedReplicationDegree;
+	}
+
+	public void updatePerceivedReplicationDegree(int value) {
+		perceivedReplicationDegree+=value;
 	}
 
 }
