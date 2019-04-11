@@ -15,7 +15,7 @@ class TCPChunkSenderThread implements Runnable {
         // TODO: hostname, port ?
         Socket client;
         try {
-            client = new Socket("localhost", 3002);
+            client = new Socket("localhost", 3003);
             dis = new DataInputStream(client.getInputStream());
             dos = new DataOutputStream(client.getOutputStream());
         } catch (IOException e) {
@@ -28,6 +28,8 @@ class TCPChunkSenderThread implements Runnable {
     public void run() {
         try {
             int oi = Integer.parseInt(Utils.getHeader(message)[4]);
+            Thread.sleep(400);
+
             dos.writeInt(oi);
 
             if(!dis.readBoolean()){
@@ -36,7 +38,8 @@ class TCPChunkSenderThread implements Runnable {
 
             dos.writeInt(message.length); // write length of the message
             dos.write(message); 
-		} catch (IOException e) {
+            dos.flush();
+		} catch (IOException | InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

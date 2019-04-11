@@ -149,15 +149,15 @@ public class Peer implements RemoteInterface {
 		System.out.println("Caralho");
 
 		try {
-			ServerSocket serverSocket = new ServerSocket(3002);
+			ServerSocket serverSocket = new ServerSocket(3003);
 			System.out.println("Caralho");
 
+			this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId, numChunks));
+
 			for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
-				System.out.println(chunkNo);
+				System.out.println("crl: " + chunkNo);
 				byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
-				this.scheduler.execute(new MessageSenderThread(message, "MC", this));
-				this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId));
-				
+				this.scheduler.execute(new MessageSenderThread(message, "MC", this));	
 			}
 			
 			try {
@@ -180,7 +180,6 @@ public class Peer implements RemoteInterface {
 
 	public void flagChunkReceived() {
 		this.latch.countDown();
-		System.out.println(this.latch.getCount());
 	}
 
 	public String getRestoredFile() {
