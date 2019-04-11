@@ -129,28 +129,21 @@ public class Peer implements RemoteInterface {
 	@Override
 	public String restore(String fileName) throws RemoteException {
 
-		System.out.println("Caralho");
 		File file = new File(fileName);
-		System.out.println("Caralho");
 
 		if (!file.exists())
 			return "File not found";
-		System.out.println("Caralho");
 
 		byte[] fileId = StoredFile.encryptFileId(fileName);
 		int numChunks = (int) Math.ceil((double) file.length() / (64 * 1000));
-		System.out.println("Caralho");
 
 		// save fileId to compare when receiving chunks
 		this.restoredFile = Utils.bytesToHex(fileId);
-		System.out.println("Caralho");
 
 		this.latch = new CountDownLatch(numChunks);
-		System.out.println("Caralho");
 
 		try {
 			ServerSocket serverSocket = new ServerSocket(3003);
-			System.out.println("Caralho");
 
 			this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId, numChunks));
 
@@ -162,6 +155,8 @@ public class Peer implements RemoteInterface {
 			
 			try {
 				this.latch.await();
+				serverSocket.close();
+				System.out.println("Socket closed");
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
