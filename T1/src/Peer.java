@@ -2,6 +2,7 @@ import java.io.File;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 
@@ -128,32 +129,50 @@ public class Peer implements RemoteInterface {
 	@Override
 	public String restore(String fileName) throws RemoteException {
 
+		System.out.println("Caralho");
 		File file = new File(fileName);
+		System.out.println("Caralho");
 
 		if (!file.exists())
 			return "File not found";
+		System.out.println("Caralho");
 
 		byte[] fileId = StoredFile.encryptFileId(fileName);
 		int numChunks = (int) Math.ceil((double) file.length() / (64 * 1000));
+		System.out.println("Caralho");
 
 		// save fileId to compare when receiving chunks
 		this.restoredFile = Utils.bytesToHex(fileId);
+		System.out.println("Caralho");
 
 		this.latch = new CountDownLatch(numChunks);
-		
-		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
-			
-			byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
-			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
-		}
-		
-		try {
-			this.latch.await();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		System.out.println("Caralho");
 
+		try {
+			ServerSocket serverSocket = new ServerSocket(3002);
+			System.out.println("Caralho");
+
+			for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
+				System.out.println(chunkNo);
+				byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
+				this.scheduler.execute(new MessageSenderThread(message, "MC", this));
+				this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId));
+				
+			}
+			
+			try {
+				this.latch.await();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		
 		fileName = fileName.substring(fileName.lastIndexOf(pathSeparator) + 1);
 		storage.restoreFile(Utils.bytesToHex(fileId), fileName);
 		return "sup yo";

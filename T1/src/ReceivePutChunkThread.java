@@ -23,16 +23,14 @@ public class ReceivePutChunkThread implements Runnable {
 		int chunkNo = Integer.parseInt(header[4]);
 		int replicationDegree = Integer.parseInt(header[5]);
 		Storage storage = peer.getStorage();
-		System.out.println("fodase");
+
 		// A peer cant store the chunks of its own files
 		if(peer.getId() == senderId || storage.contains(fileId, chunkNo) || !storage.isAvailable()) {
 			return;
 		}
-		System.out.println("caralho");
-
+		
 		this.peer.incNumReclaimMessages(header[3], Integer.parseInt(header[4]));
 	
-		System.out.println("receive: " + chunkContent.length);
 		byte[] stored = peer.buildStoredMessage(peer.getVersion(), peer.getId(), fileId, chunkNo);
 		storage.addChunk(new Chunk(fileId, chunkNo, chunkContent, chunkContent.length, replicationDegree));
 		int interval = Utils.getRandomNumber(0, 401);

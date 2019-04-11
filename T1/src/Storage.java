@@ -367,4 +367,9 @@ public class Storage {
 	public boolean isAvailable() {
 		return capacity > getUsedSpace();
 	}
+	
+	public boolean hasRestoredChunk(String id){
+		return this.restoredChunks.containsKey(id);
+	}
+
 }

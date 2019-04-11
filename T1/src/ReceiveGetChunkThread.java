@@ -34,7 +34,12 @@ public class ReceiveGetChunkThread implements Runnable {
 				return;
 			}
 			
-			peer.getScheduler().execute(new MessageSenderThread(msg,"MDR",peer));
+			peer.getScheduler().schedule(new MessageSenderThread(msg,"MDR",peer), waitTime, TimeUnit.MILLISECONDS);
+			
+			if(!peer.getVersion().equals("1.0")){
+				peer.getScheduler().schedule(new TCPChunkSenderThread(msg, peer), waitTime, TimeUnit.MILLISECONDS);
+			}
+
 		}
 
 	}
