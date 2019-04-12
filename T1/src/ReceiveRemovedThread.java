@@ -24,10 +24,9 @@ public class ReceiveRemovedThread implements Runnable {
 		boolean decremented = storage.decrementReplicationDegree(fileID, chunkNo);
 		Chunk chunk = storage.getChunk(fileID, chunkNo);
 
-		if(!decremented)
-			return;
-
 		int desiredReplicationDegree = chunk.getDesiredReplicationDegree();
+		System.out.println("oi: " + desiredReplicationDegree);
+		System.out.println("ui: " + storage.getReplicationDegree(fileID, chunkNo));
 
 		if (decremented && storage.getReplicationDegree(fileID, chunkNo) < desiredReplicationDegree) {
 			int waitTime = Utils.getRandomNumber(0, 401);

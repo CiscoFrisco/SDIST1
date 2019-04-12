@@ -168,15 +168,10 @@ public class Storage {
 	public int getUsedSpace() {
 		int space = 0;
 
-		File backup = new File(backupPath);
+		for(Chunk chunk : chunks.values())
+			space+=chunk.getBufferSize();
 
-		for (File fileFolder : backup.listFiles()) {
-			for (File chunk : fileFolder.listFiles()) {
-				space += chunk.length();
-			}
-		}
-
-		return space / 1000;
+		return space;
 	}
 
 	public String getStorageInfo() {
@@ -333,7 +328,7 @@ public class Storage {
 	}
 
 	public void deleteChunk(Chunk chunk) {
-		this.chunks.remove(chunk);
+		this.chunks.remove(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo());
 		char separator = peer.getPathSeparator();
 
 		File file = new File(
@@ -345,7 +340,7 @@ public class Storage {
 		capacity = space * 1000;
 
 		int spaceToReclaim = getUsedSpace() - capacity;
-
+		System.out.println("begin: " + spaceToReclaim);
 		if (spaceToReclaim <= 0)
 			return;
 
@@ -362,7 +357,10 @@ public class Storage {
 			this.peer.getScheduler().execute(new MessageSenderThread(message, "MC", this.peer));
 
 			spaceToReclaim -= chunk.getBufferSize();
+			System.out.println(spaceToReclaim);
 		}
+
+		System.out.println("end: " + spaceToReclaim);
 	}
 
 	public boolean isAvailable() {
