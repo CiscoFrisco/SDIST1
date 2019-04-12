@@ -19,7 +19,7 @@ public class ReceiveChunkThread implements Runnable {
 		if(peer.getVersion().equals("1.0")) {
 			peer.incNumChunkMessages(header[3], chunkNo);
 			
-			if(header[3].equals(peer.getRestoredFile())) {
+			if(header[3].equals(peer.getRestoredFile()) && !peer.getStorage().hasRestoredChunk(header[3] + "-" + chunkNo)) {
 				peer.getStorage().putRestoredChunk(header[3] + "-" + chunkNo, chunkContent);
 				peer.flagChunkReceived();
 			}

@@ -19,12 +19,11 @@ public class ReceivePutChunkThread implements Runnable {
 		int senderId = Integer.parseInt(header[2]);
 
 		byte[] fileId = Utils.hexStringToByteArray(header[3]);
-
 		int chunkNo = Integer.parseInt(header[4]);
 		int replicationDegree = Integer.parseInt(header[5]);
 		Storage storage = peer.getStorage();
-
 		// A peer cant store the chunks of its own files
+		
 		if(peer.getId() == senderId || storage.contains(fileId, chunkNo) || !storage.isAvailable()) {
 			System.out.println("Peer " + this.peer.getId() + " already has chunk:" + chunkNo);
 			return;
