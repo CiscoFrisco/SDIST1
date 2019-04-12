@@ -54,7 +54,7 @@ public class Peer implements RemoteInterface {
 		this.channels.put("MDR", new Channel(MDRaddress, MDRport, this));
 		this.restoredFile = null;
 		
-		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(200);
+		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(300);
 
 		if (new File("peer" + peerID).exists()) {
 			this.storage = Storage.readStorage("peer", this);
@@ -140,6 +140,7 @@ public class Peer implements RemoteInterface {
 		this.restoredFile = Utils.bytesToHex(fileId);
 
 		this.latch = new CountDownLatch(numChunks);
+		System.out.println("numChunks: " + numChunks);
 		
 		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
 			

@@ -128,8 +128,9 @@ public class Storage {
 			FileOutputStream fos = new FileOutputStream(file);
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
 
-			for (byte[] bytes : chunks.values()) {
-				bos.write(bytes);
+			for (Map.Entry<Integer, byte[]> chunk : chunks.entrySet()) {
+				System.out.println("num: " + chunk.getKey());
+				bos.write(chunk.getValue());
 			}
 
 			bos.close();
@@ -168,8 +169,8 @@ public class Storage {
 	public int getUsedSpace() {
 		int space = 0;
 
-		for(Chunk chunk : chunks.values())
-			space+=chunk.getBufferSize();
+		for (Chunk chunk : chunks.values())
+			space += chunk.getBufferSize();
 
 		return space;
 	}
@@ -201,7 +202,7 @@ public class Storage {
 	}
 
 	public boolean hasRestoredChunk(String id) {
-		return restoredChunks.contains(id);
+		return restoredChunks.containsKey(id);
 	}
 
 	public void addChunk(Chunk chunk) {
