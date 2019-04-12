@@ -178,7 +178,7 @@ public class Storage {
 	public String getStorageInfo() {
 		String info = "STORAGE INFO\n Storage capacity: " + capacity / 1000 + " KBytes\n";
 
-		info += " Amount of storage used for chunks: " + getUsedSpace() + " KBytes";
+		info += " Amount of storage used for chunks: " + (getUsedSpace() / 1000) + " KBytes";
 
 		return info;
 	}

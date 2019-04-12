@@ -16,14 +16,10 @@ public class ReceiveStoredThread implements Runnable {
     Storage storage = this.peer.getStorage();
     int chunkNo = Integer.parseInt(header[4]);
 
+    storage.addConfirmationMessage(fileId, chunkNo, Integer.parseInt(header[2]));
+
     if (storage.contains(fileId, chunkNo)) {
       storage.updateNumConfirmationMessages(fileId, chunkNo);
     }
-
-    if (!storage.hasFile(fileId))
-      return;
-
-    storage.addConfirmationMessage(fileId, chunkNo,
-                                   Integer.parseInt(header[2]));
   }
 }
