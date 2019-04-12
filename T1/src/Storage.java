@@ -58,12 +58,11 @@ public class Storage {
 		String key = Utils.bytesToHex(fileId) + "-" + chunkNo;
 		ArrayList<Integer> list;
 
-		if(confirmationMessages.containsKey(key)){
+		if (confirmationMessages.containsKey(key)) {
 			list = confirmationMessages.get(key);
 			list.add(peerId);
 			confirmationMessages.replace(key, list);
-		}
-		else{
+		} else {
 			list = new ArrayList<Integer>();
 			list.add(peerId);
 			confirmationMessages.put(key, list);
@@ -78,7 +77,13 @@ public class Storage {
 	}
 
 	public int getNumConfirmationMessages(byte[] fileId, int chunkNo) {
-		return confirmationMessages.get(Utils.bytesToHex(fileId) + "-" + chunkNo).size();
+		for (Map.Entry<String, ArrayList<Integer>> entry : confirmationMessages.entrySet()) {
+			if (entry.getKey().equals(Utils.bytesToHex(fileId) + "-" + chunkNo)) {
+				return entry.getValue().size();
+			}
+		}
+
+		return 0;
 	}
 
 	public void putRestoredChunk(String id, byte[] chunkBody) {
@@ -153,7 +158,8 @@ public class Storage {
 		String info = "";
 
 		for (Chunk entry : chunks.values()) {
-			info += entry.toString() + "\nPerceived replication degree: " + entry.getPerceivedReplicationDegree() + '\n';
+			info += entry.toString() + "\nPerceived replication degree: " + entry.getPerceivedReplicationDegree()
+					+ '\n';
 		}
 
 		return info;
@@ -199,13 +205,12 @@ public class Storage {
 		return reclaimedChunks.get(fileId).equals(chunkNo);
 	}
 
-	public boolean hasRestoredChunk(String id){
+	public boolean hasRestoredChunk(String id) {
 		return restoredChunks.contains(id);
 	}
 
 	public void addChunk(Chunk chunk) {
 		this.chunks.put(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo(), chunk);
-
 
 		byte[] fileId = chunk.getFileId();
 
@@ -285,7 +290,8 @@ public class Storage {
 					Chunk chunk = Chunk.deserialize(entry.getPath());
 					// TODO: o que fazer com replication degree
 					chunks.put(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo(), chunk);
-//					peer.incNumChunksStored(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo());
+					// peer.incNumChunksStored(Utils.bytesToHex(chunk.getFileId()) + "-" +
+					// chunk.getChunkNo());
 				}
 			}
 
@@ -330,8 +336,8 @@ public class Storage {
 		this.chunks.remove(chunk);
 		char separator = peer.getPathSeparator();
 
-		File file = new File(backupPath
-				+ Utils.bytesToHex(chunk.getFileId()) + separator + "chk" + chunk.getChunkNo() + ".ser");
+		File file = new File(
+				backupPath + Utils.bytesToHex(chunk.getFileId()) + separator + "chk" + chunk.getChunkNo() + ".ser");
 		file.delete();
 	}
 
@@ -347,7 +353,7 @@ public class Storage {
 
 		Collections.sort(sortedChunks, Comparator.comparing(Chunk::getBufferSize));
 		Collections.reverse(sortedChunks);
-		
+
 		for (Iterator<Chunk> i = sortedChunks.iterator(); spaceToReclaim > 0;) {
 			Chunk chunk = (Chunk) i.next();
 			deleteChunk(chunk);
