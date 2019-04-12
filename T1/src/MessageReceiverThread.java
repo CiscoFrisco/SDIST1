@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 public class MessageReceiverThread implements Runnable {
 
@@ -19,10 +20,11 @@ public class MessageReceiverThread implements Runnable {
 		messageType = messageType.substring(0, messageType.indexOf(" "));
 
 		System.out.println(messageType);
-		
+		int interval = Utils.getRandomNumber(0, 401);
+
 		switch (messageType) {
 		case "PUTCHUNK":
-			peer.getScheduler().execute(new ReceivePutChunkThread(message, length, peer));
+			peer.getScheduler().schedule(new ReceivePutChunkThread(message, length, peer), interval, TimeUnit.MILLISECONDS);
 			break;
 		case "STORED":
 			peer.getScheduler().execute(new ReceiveStoredThread(message, length, peer));

@@ -75,7 +75,6 @@ class StoredFile implements Serializable {
 			for (; (bytesAmount = bis.read(buffer)) > 0; chunkNo++) {
 				byte[] smaller = new byte[bytesAmount];
 				System.arraycopy(buffer, 0, smaller, 0, bytesAmount);
-				System.out.println("split: " + smaller.length);
 				chunks.add(new Chunk(fileId, chunkNo, smaller, bytesAmount, replicationDegree));
 				this.chunks.put(chunkNo, new ArrayList<Integer>());
 			}

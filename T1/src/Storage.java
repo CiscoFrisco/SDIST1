@@ -78,11 +78,16 @@ public class Storage {
 	}
 
 	public int getNumConfirmationMessages(byte[] fileId, int chunkNo) {
-		return confirmationMessages.get(Utils.bytesToHex(fileId) + "-" + chunkNo).size();
+		for(Map.Entry<String, ArrayList<Integer>> entry : confirmationMessages.entrySet()){
+			if(entry.getKey().equals(Utils.bytesToHex(fileId) + "-" + chunkNo)){
+				return entry.getValue().size();
+			}
+		}
+
+		return 0;
 	}
 
 	public void putRestoredChunk(String id, byte[] chunkBody) {
-		System.out.println("RESTORING CHUNK...");
 		this.restoredChunks.put(id, chunkBody);
 	}
 
