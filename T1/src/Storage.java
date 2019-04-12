@@ -205,7 +205,7 @@ public class Storage {
 	}
 
 	public boolean hasRestoredChunk(String id){
-		return restoredChunks.contains(id);
+		return restoredChunks.containsKey(id);
 	}
 
 	public void addChunk(Chunk chunk) {
