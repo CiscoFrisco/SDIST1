@@ -1,5 +1,3 @@
-import java.util.concurrent.TimeUnit;
-
 public class ReceivePutChunkThread implements Runnable {
 
 	private String[] header;
@@ -16,21 +14,22 @@ public class ReceivePutChunkThread implements Runnable {
 	@Override
 	public void run() {
 		int senderId = Integer.parseInt(header[2]);
-
 		byte[] fileId = Utils.hexStringToByteArray(header[3]);
 		int chunkNo = Integer.parseInt(header[4]);
 		int replicationDegree = Integer.parseInt(header[5]);
 		Storage storage = peer.getStorage();
+		
 		// A peer cant store the chunks of its own files
 
 		if (peer.getId() == senderId || storage.contains(fileId, chunkNo) || !storage.isAvailable()) {
 			return;
 		}
 
-		System.out.println(storage.getNumConfirmationMessages(fileId, chunkNo));
-		if (storage.getNumConfirmationMessages(fileId, chunkNo) >= replicationDegree) {
+		System.out.println("conf: " + storage.getNumConfirmationMessages(fileId, chunkNo));
+		if (peer.getVersion().equals("2.0") && storage.getNumConfirmationMessages(fileId, chunkNo) >= replicationDegree) {
 			return;
 		}
+
 		byte[] stored = peer.buildStoredMessage(peer.getVersion(), peer.getId(), fileId, chunkNo);
 		peer.getScheduler().execute(new MessageSenderThread(stored, "MC", peer));
 

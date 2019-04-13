@@ -12,11 +12,16 @@ class ReceiveAnnounceThread implements Runnable {
 
     @Override
     public void run() {
-        ArrayList<String> tasks = peer.getStorage().getTasks(Integer.parseInt(header[2]));
-        
-        for(String fileId : tasks){
-            byte[] delete = peer.buildDeleteMessage(peer.getVersion(), peer.getId(), Utils.hexStringToByteArray(fileId));
-            this.peer.getScheduler().execute(new MessageSenderThread(delete, "MC", peer));
+
+        if (peer.getVersion().equals("2.0")) {
+            ArrayList<String> tasks = peer.getStorage().getTasks(Integer.parseInt(header[2]));
+
+            for (String fileId : tasks) {
+                byte[] delete = peer.buildDeleteMessage(peer.getVersion(), peer.getId(),
+                        Utils.hexStringToByteArray(fileId));
+                this.peer.getScheduler().execute(new MessageSenderThread(delete, "MC", peer));
+            }
         }
+
     }
 }

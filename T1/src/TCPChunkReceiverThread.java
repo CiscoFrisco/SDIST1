@@ -11,13 +11,11 @@ class TCPChunkReceiverThread implements Runnable {
     private DataOutputStream dos;
     private byte[] file;
     private ServerSocket serverSocket;
-    private int numChunks;
 
-    public TCPChunkReceiverThread(Peer peer, ServerSocket serverSocket, byte[] file, int numChunks) {
+    public TCPChunkReceiverThread(Peer peer, ServerSocket serverSocket, byte[] file) {
         this.peer = peer;
         this.file = file;
         this.serverSocket = serverSocket;
-        this.numChunks = numChunks;
     }
 
     @Override

@@ -1,7 +1,6 @@
 import java.io.File;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
@@ -9,8 +8,6 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.Map;
-import java.util.Vector;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
@@ -71,7 +68,9 @@ public class Peer implements RemoteInterface {
 
 		this.chunkMessages = new ConcurrentHashMap<String, Integer>();
 		this.reclaimMessages = new ConcurrentHashMap<String, Integer>();
-		this.scheduler.execute(new MessageSenderThread(buildAnnounceMessage(this.protocol_version, this.peerID),"MC", this));
+		if (this.protocol_version.equals("2.0"))
+			this.scheduler.execute(
+					new MessageSenderThread(buildAnnounceMessage(this.protocol_version, this.peerID), "MC", this));
 	}
 
 	public static void main(String[] args) {
@@ -152,29 +151,31 @@ public class Peer implements RemoteInterface {
 		try {
 			ServerSocket serverSocket = new ServerSocket(3003);
 
-			this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId, numChunks));
+			if (protocol_version.equals("2.0")) {
+				this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId));
+			}
 
 			for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
 				System.out.println("crl: " + chunkNo);
 				byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
-				this.scheduler.execute(new MessageSenderThread(message, "MC", this));	
+				this.scheduler.execute(new MessageSenderThread(message, "MC", this));
 			}
-			
+
 			try {
 				this.latch.await();
-				serverSocket.close();
+				if (protocol_version.equals("2.0"))
+					serverSocket.close();
 				System.out.println("Socket closed");
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
-		
+
 		fileName = fileName.substring(fileName.lastIndexOf(pathSeparator) + 1);
 		storage.restoreFile(Utils.bytesToHex(fileId), fileName);
 		return "sup yo";
@@ -270,7 +271,6 @@ public class Peer implements RemoteInterface {
 		String message = "ACKDELETE " + version + " " + senderId + " " + initiatorId + " " + file + " \r\n\r\n";
 		return message.getBytes(StandardCharsets.US_ASCII);
 	}
-
 
 	public byte[] buildStoredMessage(String version, int senderId, byte[] fileId, int chunkNo) {
 		String message = "STORED " + version + " " + senderId + " " + Utils.bytesToHex(fileId) + " " + chunkNo

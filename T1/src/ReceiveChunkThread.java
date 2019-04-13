@@ -5,7 +5,6 @@ public class ReceiveChunkThread implements Runnable {
 	private String[] header;
 	private byte[] chunkContent;
 
-
 	public ReceiveChunkThread(byte[] message, int length, Peer peer) {
 		this.header = Utils.getHeader(message);
 		this.chunkContent = Utils.getChunkContent(message, length);
@@ -15,14 +14,13 @@ public class ReceiveChunkThread implements Runnable {
 	@Override
 	public void run() {
 		int chunkNo = Integer.parseInt(header[4]);
-		
-		if(peer.getVersion().equals("1.0")) {
-			peer.incNumChunkMessages(header[3], chunkNo);
-			
-			if(header[3].equals(peer.getRestoredFile()) && !peer.getStorage().hasRestoredChunk(header[3] + "-" + chunkNo)) {
-				peer.getStorage().putRestoredChunk(header[3] + "-" + chunkNo, chunkContent);
-				peer.flagChunkReceived();
-			}
+
+		peer.incNumChunkMessages(header[3], chunkNo);
+
+		if (header[3].equals(peer.getRestoredFile())
+				&& !peer.getStorage().hasRestoredChunk(header[3] + "-" + chunkNo)) {
+			peer.getStorage().putRestoredChunk(header[3] + "-" + chunkNo, chunkContent);
+			peer.flagChunkReceived();
 		}
 	}
 

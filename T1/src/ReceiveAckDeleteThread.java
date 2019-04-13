@@ -10,10 +10,17 @@ class ReceiveAckDeleteThread implements Runnable {
     @Override
     public void run() {
 
-        if(peer.getId() != Integer.parseInt(header[3])){
+        if (peer.getVersion().equals("1.0")) {
             return;
         }
-        System.out.println(header[4] + "-" + Integer.parseInt(header[2]));
-        peer.getStorage().addAckMesssage(header[4], Integer.parseInt(header[2]));
+
+        int senderId = Integer.parseInt(header[2]);
+
+        System.out.println(header[4] + "-" + senderId);
+
+        if (peer.getId() == Integer.parseInt(header[3]))
+            peer.getStorage().addAckMesssage(header[4], senderId);
+
+        peer.getStorage().removeConfirmationMessages(header[4], senderId);
     }
 }

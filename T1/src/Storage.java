@@ -86,6 +86,14 @@ public class Storage {
 		return 0;
 	}
 
+	public void removeConfirmationMessages(String fileId, int peerId){
+		for (Map.Entry<String, ArrayList<Integer>> entry : confirmationMessages.entrySet()) {
+			if (entry.getKey().contains(fileId)) {
+				entry.getValue().remove(peerId);
+			}
+		}
+	}
+
 	public void putRestoredChunk(String id, byte[] chunkBody) {
 		this.restoredChunks.put(id, chunkBody);
 	}
@@ -195,10 +203,6 @@ public class Storage {
 
 	public boolean hasReclaimedChunk(String fileId, int chunkNo) {
 		return reclaimedChunks.get(fileId).equals(chunkNo);
-	}
-
-	public boolean hasRestoredChunk(String id) {
-		return restoredChunks.containsKey(id);
 	}
 
 	public void addChunk(Chunk chunk) {
