@@ -87,7 +87,6 @@ public class Storage {
 	}
 
 	public void putRestoredChunk(String id, byte[] chunkBody) {
-		System.out.println("RESTORING CHUNK...");
 		this.restoredChunks.put(id, chunkBody);
 	}
 

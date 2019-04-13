@@ -12,11 +12,11 @@ public class ReceiveStoredThread implements Runnable {
   @Override
   public void run() {
 
-    byte[] fileId = Utils.hexStringToByteArray(header[3]);
-    Storage storage = this.peer.getStorage();
-    int chunkNo = Integer.parseInt(header[4]);
+		byte[] fileId = Utils.hexStringToByteArray(header[3]);
+		Storage storage = this.peer.getStorage();
+		int chunkNo = Integer.parseInt(header[4]);
 
-    storage.addConfirmationMessage(fileId, chunkNo, Integer.parseInt(header[2]));
+		storage.addConfirmationMessage(fileId, chunkNo, Integer.parseInt(header[2]));
 
     if (storage.contains(fileId, chunkNo)) {
       storage.updateNumConfirmationMessages(fileId, chunkNo);
