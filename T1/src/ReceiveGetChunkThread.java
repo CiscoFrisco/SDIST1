@@ -1,6 +1,3 @@
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-
 public class ReceiveGetChunkThread implements Runnable {
 
 	private Peer peer;

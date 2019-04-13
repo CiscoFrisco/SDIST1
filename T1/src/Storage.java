@@ -1,10 +1,7 @@
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -118,8 +115,6 @@ public class Storage {
 	}
 
 	public void restoreFile(String fileId, String fileName) {
-		// TODO: windows vs linux filepaths
-		char separator = peer.getPathSeparator();
 		String path = restorePath + fileName;
 		File file = new File(path);
 		ConcurrentHashMap<Integer, byte[]> chunks = getChunks(fileId);
@@ -284,7 +279,7 @@ public class Storage {
 			for (File fileEntry : backup.listFiles()) {
 				for (File entry : fileEntry.listFiles()) {
 					Chunk chunk = Chunk.deserialize(entry.getPath());
-					// TODO: o que fazer com replication degree
+
 					chunks.put(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo(), chunk);
 					// peer.incNumChunksStored(Utils.bytesToHex(chunk.getFileId()) + "-" +
 					// chunk.getChunkNo());

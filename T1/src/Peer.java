@@ -1,14 +1,12 @@
 import java.io.File;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.Map;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
@@ -24,8 +22,6 @@ public class Peer implements RemoteInterface {
 	private ScheduledThreadPoolExecutor scheduler;
 	private Storage storage;
 	private String protocol_version;
-	private int numChunkMessages;
-	private ConcurrentHashMap<String, Integer> confirmationMessages;
 	private ConcurrentHashMap<String, Integer> chunkMessages;
 	private ConcurrentHashMap<String, Integer> reclaimMessages;
 
@@ -67,7 +63,6 @@ public class Peer implements RemoteInterface {
 			this.scheduler.execute(channel);
 		}
 
-		this.numChunkMessages = 0;
 		this.pathSeparator = Utils.getCharSeparator();
 
 		this.chunkMessages = new ConcurrentHashMap<String, Integer>();

@@ -1,4 +1,3 @@
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class ReceivePutChunkThread implements Runnable {
