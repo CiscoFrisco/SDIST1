@@ -22,6 +22,7 @@ public class Storage {
 	private ConcurrentHashMap<String, ArrayList<Integer>> confirmationMessages;
 	private String backupPath;
 	private String restorePath;
+	private ConcurrentHashMap<String, ArrayList<Integer>> deleteAcks;
 
 	public Storage(Peer peer) {
 		this.chunks = new ConcurrentHashMap<String, Chunk>();
@@ -29,6 +30,7 @@ public class Storage {
 		this.reclaimedChunks = new ConcurrentHashMap<String, Integer>();
 		this.storedFiles = new ArrayList<StoredFile>();
 		this.confirmationMessages = new ConcurrentHashMap<String, ArrayList<Integer>>();
+		this.deleteAcks = new ConcurrentHashMap<String, ArrayList<Integer>>();
 
 		this.capacity = 2000 * 1000 * 1000; // 2000 MBytes
 
@@ -43,6 +45,7 @@ public class Storage {
 		this.storedFiles = new ArrayList<StoredFile>();
 		this.restoredChunks = new ConcurrentHashMap<String, byte[]>();
 		this.reclaimedChunks = new ConcurrentHashMap<String, Integer>();
+		this.deleteAcks = new ConcurrentHashMap<String, ArrayList<Integer>>();
 
 		this.peer = peer;
 
@@ -361,5 +364,40 @@ public class Storage {
 
 	public boolean isAvailable() {
 		return capacity > getUsedSpace();
+	}
+
+	public void addAckMesssage(String fileId, int peerId) {
+		ArrayList<Integer> newList = deleteAcks.get(fileId);
+
+		if (newList != null) {
+			newList.add(peerId);
+			deleteAcks.replace(fileId, newList);
+		} else {
+			newList = new ArrayList<Integer>();
+			newList.add(peerId);
+			deleteAcks.put(fileId, newList);
+		}
+
+	}
+
+	public ArrayList<String> getTasks(int peerId){
+
+		ArrayList<String> deleteTasks = new ArrayList<String>();
+
+		for(Map.Entry<String, ArrayList<Integer>> entry : confirmationMessages.entrySet()){
+			if(entry.getValue().contains(peerId)){
+				String fileId = entry.getKey().substring(0, entry.getKey().indexOf('-'));
+				for(Map.Entry<String, ArrayList<Integer>> entry2 : deleteAcks.entrySet()){
+					System.out.println(entry2.getKey());
+					if(entry2.getKey().equals(fileId) && !entry2.getValue().contains(peerId)){
+						System.out.println("yo");
+						deleteTasks.add(fileId);
+						break;
+					}
+				}
+			}
+		}
+
+		return deleteTasks;
 	}
 }

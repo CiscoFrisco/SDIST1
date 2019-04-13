@@ -17,7 +17,7 @@ public class MessageReceiverThread implements Runnable {
 		messageType = messageType.substring(0, messageType.indexOf(" "));
 
 		System.out.println(messageType);
-		
+
 		switch (messageType) {
 		case "PUTCHUNK":
 			peer.getScheduler().execute(new ReceivePutChunkThread(message, length, peer));
@@ -33,6 +33,12 @@ public class MessageReceiverThread implements Runnable {
 			break;
 		case "DELETE":
 			peer.getScheduler().execute(new ReceiveDeleteThread(message, peer));
+			break;
+		case "ACKDELETE":
+			peer.getScheduler().execute(new ReceiveAckDeleteThread(message, peer));
+			break;
+		case "ANNOUNCE":
+			peer.getScheduler().execute(new ReceiveAnnounceThread(message, peer));
 			break;
 		case "REMOVED":
 			peer.getScheduler().execute(new ReceiveRemovedThread(message, peer));

@@ -7,6 +7,8 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.Map;
+import java.util.Vector;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.Naming;
 
@@ -67,6 +69,7 @@ public class Peer implements RemoteInterface {
 
 		this.chunkMessages = new ConcurrentHashMap<String, Integer>();
 		this.reclaimMessages = new ConcurrentHashMap<String, Integer>();
+		this.scheduler.execute(new MessageSenderThread(buildAnnounceMessage(this.protocol_version, this.peerID),"MC", this));
 	}
 
 	public static void main(String[] args) {
@@ -239,6 +242,22 @@ public class Peer implements RemoteInterface {
 		return message.getBytes(StandardCharsets.US_ASCII);
 
 	}
+
+	public byte[] buildAnnounceMessage(String version, int senderId) {
+
+		String message = "ANNOUNCE " + version + " " + senderId + " \r\n\r\n";
+
+		return message.getBytes(StandardCharsets.US_ASCII);
+
+	}
+
+	public byte[] buildAckDeleteMessage(String version, int senderId, int initiatorId, byte[] fileId) {
+		String file = Utils.bytesToHex(fileId);
+
+		String message = "ACKDELETE " + version + " " + senderId + " " + initiatorId + " " + file + " \r\n\r\n";
+		return message.getBytes(StandardCharsets.US_ASCII);
+	}
+
 
 	public byte[] buildStoredMessage(String version, int senderId, byte[] fileId, int chunkNo) {
 		String message = "STORED " + version + " " + senderId + " " + Utils.bytesToHex(fileId) + " " + chunkNo
