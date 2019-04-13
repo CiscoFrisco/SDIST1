@@ -32,7 +32,7 @@ public class Peer implements RemoteInterface {
 	private CountDownLatch latch;
 
 	private String restoredFile;
-	
+
 	private char pathSeparator;
 
 	public ScheduledThreadPoolExecutor getScheduler() {
@@ -53,7 +53,7 @@ public class Peer implements RemoteInterface {
 		this.channels.put("MDB", new Channel(MDBaddress, MDBport, this));
 		this.channels.put("MDR", new Channel(MDRaddress, MDRport, this));
 		this.restoredFile = null;
-		
+
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(300);
 
 		if (new File("peer" + peerID).exists()) {
@@ -69,7 +69,7 @@ public class Peer implements RemoteInterface {
 
 		this.numChunkMessages = 0;
 		this.pathSeparator = Utils.getCharSeparator();
-		
+
 		this.chunkMessages = new ConcurrentHashMap<String, Integer>();
 		this.reclaimMessages = new ConcurrentHashMap<String, Integer>();
 	}
@@ -101,7 +101,12 @@ public class Peer implements RemoteInterface {
 	}
 
 	@Override
-	public String backup(String fileName, int replicationDegree) {
+	public String backup(String fileName, int replicationDegree, boolean enhancement) {
+
+		if ((protocol_version.equals("1.0") && enhancement) || (!protocol_version.equals("1.0") && !enhancement)) {
+			return "ERROR: Peer and TestApp are not synchronized. Please try again with the proper protocol version.";
+		}
+
 		StoredFile file = new StoredFile(fileName, replicationDegree);
 		this.storage.addFile(file);
 
@@ -126,7 +131,10 @@ public class Peer implements RemoteInterface {
 	}
 
 	@Override
-	public String restore(String fileName) throws RemoteException {
+	public String restore(String fileName, boolean enhancement) throws RemoteException {
+		if ((protocol_version.equals("1.0") && enhancement) || (!protocol_version.equals("1.0") && !enhancement)) {
+			return "ERROR: Peer and TestApp are not synchronized. Please try again with the proper protocol version.";
+		}
 
 		File file = new File(fileName);
 
@@ -141,13 +149,13 @@ public class Peer implements RemoteInterface {
 
 		this.latch = new CountDownLatch(numChunks);
 		System.out.println("numChunks: " + numChunks);
-		
+
 		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
-			
+
 			byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
 			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
 		}
-		
+
 		try {
 			this.latch.await();
 		} catch (InterruptedException e) {
@@ -170,7 +178,10 @@ public class Peer implements RemoteInterface {
 	}
 
 	@Override
-	public String delete(String fileName) throws RemoteException {
+	public String delete(String fileName, boolean enhancement) throws RemoteException {
+		if ((protocol_version.equals("1.0") && enhancement) || (!protocol_version.equals("1.0") && !enhancement)) {
+			return "ERROR: Peer and TestApp are not synchronized. Please try again with the proper protocol version.";
+		}
 
 		File file = new File(fileName);
 
@@ -217,7 +228,8 @@ public class Peer implements RemoteInterface {
 		String file = Utils.bytesToHex(fileId);
 		byte[] chunkContent = chunk.getBuffer();
 
-		String header = "PUTCHUNK " + version + " " + senderId + " " + file + " " + chunkNo + " " + replicationDegree + " \r\n\r\n";
+		String header = "PUTCHUNK " + version + " " + senderId + " " + file + " " + chunkNo + " " + replicationDegree
+				+ " \r\n\r\n";
 		byte[] header_b = header.getBytes(StandardCharsets.US_ASCII);
 
 		return Utils.concatenateArrays(header_b, chunkContent);
@@ -234,8 +246,8 @@ public class Peer implements RemoteInterface {
 	}
 
 	public byte[] buildStoredMessage(String version, int senderId, byte[] fileId, int chunkNo) {
-		String message = "STORED " + version + " " + senderId + " " + Utils.bytesToHex(fileId)
-				+ " " + chunkNo + " \r\n\r\n";
+		String message = "STORED " + version + " " + senderId + " " + Utils.bytesToHex(fileId) + " " + chunkNo
+				+ " \r\n\r\n";
 		return message.getBytes(StandardCharsets.US_ASCII);
 
 	}
@@ -244,7 +256,7 @@ public class Peer implements RemoteInterface {
 		String file = Utils.bytesToHex(fileId);
 		byte[] chunkContent = chunk.getBuffer();
 
-		String header = "CHUNK " + version + " " + senderId + " " + file + " " + chunkNo  + " \r\n\r\n";
+		String header = "CHUNK " + version + " " + senderId + " " + file + " " + chunkNo + " \r\n\r\n";
 		byte[] header_b = header.getBytes(StandardCharsets.US_ASCII);
 
 		return Utils.concatenateArrays(header_b, chunkContent);
@@ -279,50 +291,49 @@ public class Peer implements RemoteInterface {
 	}
 
 	public void incNumChunkMessages(String fileId, int chunkNo) {
-		
+
 		String key = fileId + "-" + chunkNo;
 		Integer value = chunkMessages.get(key);
-		if(value != null) {
+		if (value != null) {
 			chunkMessages.replace(key, value + 1);
-		}
-		else {
+		} else {
 			chunkMessages.put(key, 1);
 		}
 	}
 
 	public int numChunkMessages(String fileId, int chunkNo) {
-		Integer value =  chunkMessages.get(fileId + "-" + chunkNo);
-		
-		if(value == null)
+		Integer value = chunkMessages.get(fileId + "-" + chunkNo);
+
+		if (value == null)
 			return 0;
-		
+
 		return value;
 	}
-	
+
 	public void incNumReclaimMessages(String fileId, int chunkNo) {
-		
+
 		String key = fileId + "-" + chunkNo;
 		Integer value = reclaimMessages.get(key);
-		if(value != null) {
+		if (value != null) {
 			reclaimMessages.replace(key, value + 1);
 		}
 	}
-	
+
 	public void putReclaimMessage(String fileId, int chunkNo) {
-		
+
 		String key = fileId + "-" + chunkNo;
 		Integer value = reclaimMessages.get(key);
-		if(value != null) {
+		if (value != null) {
 			reclaimMessages.replace(key, value + 1);
 		}
 	}
 
 	public int numReclaimMessages(String fileId, int chunkNo) {
-		Integer value =  reclaimMessages.get(fileId + "-" + chunkNo);
-		
-		if(value == null)
+		Integer value = reclaimMessages.get(fileId + "-" + chunkNo);
+
+		if (value == null)
 			return 0;
-		
+
 		return value;
 	}
 

@@ -89,11 +89,11 @@ class TestApp {
             String operation = args[1];
 
             if (operation.contains("BACKUP")) {
-                response = stub.backup(args[2], Integer.parseInt(args[3]));
+                response = stub.backup(args[2], Integer.parseInt(args[3]), operation.contains("ENH"));
             } else if (operation.contains("RESTORE")) {
-                response = stub.restore(args[2]);
+                response = stub.restore(args[2], operation.contains("ENH"));
             } else if (operation.contains("DELETE")) {
-                response = stub.delete(args[2]);
+                response = stub.delete(args[2], operation.contains("ENH"));
             } else if (operation.contains("RECLAIM")) {
                 response = stub.reclaim(Integer.parseInt(args[2]));
             } else {
