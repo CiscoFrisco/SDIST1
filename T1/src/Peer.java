@@ -1,6 +1,8 @@
 import java.io.File;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 
@@ -146,21 +148,33 @@ public class Peer implements RemoteInterface {
 		this.restoredFile = Utils.bytesToHex(fileId);
 
 		this.latch = new CountDownLatch(numChunks);
-		System.out.println("numChunks: " + numChunks);
-
-		for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
-
-			byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
-			this.scheduler.execute(new MessageSenderThread(message, "MC", this));
-		}
 
 		try {
-			this.latch.await();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+			ServerSocket serverSocket = new ServerSocket(3003);
 
+			this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId, numChunks));
+
+			for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
+				System.out.println("crl: " + chunkNo);
+				byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
+				this.scheduler.execute(new MessageSenderThread(message, "MC", this));	
+			}
+			
+			try {
+				this.latch.await();
+				serverSocket.close();
+				System.out.println("Socket closed");
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		
 		fileName = fileName.substring(fileName.lastIndexOf(pathSeparator) + 1);
 		storage.restoreFile(Utils.bytesToHex(fileId), fileName);
 		return "sup yo";
@@ -168,7 +182,6 @@ public class Peer implements RemoteInterface {
 
 	public void flagChunkReceived() {
 		this.latch.countDown();
-		System.out.println(this.latch.getCount());
 	}
 
 	public String getRestoredFile() {

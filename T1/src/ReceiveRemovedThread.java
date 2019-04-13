@@ -12,9 +12,6 @@ public class ReceiveRemovedThread implements Runnable {
 
 	@Override
 	public void run() {
-		System.out.println(peer.getId());	
-		System.out.println(Integer.parseInt(header[2]));	
-
 		if(peer.getId() == Integer.parseInt(header[2]))
 			return;
 
@@ -32,7 +29,6 @@ public class ReceiveRemovedThread implements Runnable {
 			int waitTime = Utils.getRandomNumber(0, 401);
 			byte[] chunk_msg = peer.buildPutChunkMessage(peer.getVersion(), peer.getId(), fileID, chunkNo,
 					desiredReplicationDegree, chunk);
-			System.out.println("SENDING PUTCHUNK...");
 
 			int numReclaimMessages = peer.numChunkMessages(header[3], chunkNo);
 

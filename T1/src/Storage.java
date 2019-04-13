@@ -32,7 +32,7 @@ public class Storage {
 		this.confirmationMessages = new ConcurrentHashMap<String, ArrayList<Integer>>();
 		this.deleteAcks = new ConcurrentHashMap<String, ArrayList<Integer>>();
 
-		this.capacity = 2000 * 1000 * 1000; // 2000 MBytes
+		this.capacity = 2000 * 1000 * 1000;
 
 		this.peer = peer;
 		this.backupPath = "peer" + peer.getId() + Utils.getCharSeparator() + "backup" + Utils.getCharSeparator();
@@ -156,8 +156,7 @@ public class Storage {
 		String info = "";
 
 		for (Chunk entry : chunks.values()) {
-			info += entry.toString() + "\nPerceived replication degree: " + entry.getPerceivedReplicationDegree()
-					+ '\n';
+			info += entry.toString() + "\nPerceived replication degree: " + entry.getPerceivedReplicationDegree() + '\n';
 		}
 
 		return info;
@@ -281,10 +280,9 @@ public class Storage {
 			for (File fileEntry : backup.listFiles()) {
 				for (File entry : fileEntry.listFiles()) {
 					Chunk chunk = Chunk.deserialize(entry.getPath());
-
+					
 					chunks.put(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo(), chunk);
-					// peer.incNumChunksStored(Utils.bytesToHex(chunk.getFileId()) + "-" +
-					// chunk.getChunkNo());
+//					peer.incNumChunksStored(Utils.bytesToHex(chunk.getFileId()) + "-" + chunk.getChunkNo());
 				}
 			}
 
@@ -364,6 +362,11 @@ public class Storage {
 	public boolean isAvailable() {
 		return capacity > getUsedSpace();
 	}
+	
+	public boolean hasRestoredChunk(String id){
+		return restoredChunks.containsKey(id);
+	}
+
 
 	public void addAckMesssage(String fileId, int peerId) {
 		ArrayList<Integer> newList = deleteAcks.get(fileId);
