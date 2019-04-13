@@ -2,16 +2,20 @@
 public class ReceiveDeleteThread implements Runnable {
 
 	private Peer peer;
-	private String fileId;
+	private String[] header;
 
 	public ReceiveDeleteThread(byte[] message, Peer peer) {
-		this.fileId = Utils.getHeader(message)[3];
+		this.header = Utils.getHeader(message);
 		this.peer = peer;
 	}
 
 	@Override
 	public void run() {
-		peer.getStorage().deleteChunks(Utils.hexStringToByteArray(fileId));
+		byte[] fileId = Utils.hexStringToByteArray(header[3]);
+		peer.getStorage().deleteChunks(fileId);
+
+		byte[] message = peer.buildAckDeleteMessage(peer.getVersion(), peer.getId(), Integer.parseInt(header[2]) ,fileId);
+		peer.getScheduler().execute(new MessageSenderThread(message, "MC", peer));
 	}
 
 }
