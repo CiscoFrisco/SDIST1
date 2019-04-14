@@ -22,7 +22,6 @@ class TCPChunkReceiverThread implements Runnable {
     public void run() {
 
         while (!serverSocket.isClosed()) {
-        	System.out.println("OI");
             try {
 
                 Socket server;
@@ -39,7 +38,7 @@ class TCPChunkReceiverThread implements Runnable {
 
                 int chunk = dis.readInt();
                 boolean acceptChunk = !peer.getStorage().hasRestoredChunk(Utils.bytesToHex(file) + "-" + chunk);
-                System.out.println(chunk + ":" + acceptChunk);
+
                 dos.writeBoolean(acceptChunk);
                 dos.flush();
 

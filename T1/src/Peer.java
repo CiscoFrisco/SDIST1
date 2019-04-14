@@ -127,7 +127,7 @@ public class Peer implements RemoteInterface {
 					TimeUnit.SECONDS);
 		}
 
-		return "sup";
+		return "Backing up file " + fileName;
 	}
 
 	@Override
@@ -186,7 +186,8 @@ public class Peer implements RemoteInterface {
 
 		fileName = fileName.substring(fileName.lastIndexOf(pathSeparator) + 1);
 		storage.restoreFile(Utils.bytesToHex(fileId), fileName);
-		return "sup yo";
+
+		return "restored file: " + fileName;
 	}
 
 	public void flagChunkReceived() {
@@ -213,14 +214,14 @@ public class Peer implements RemoteInterface {
 		byte[] message = buildDeleteMessage(protocol_version, peerID, fileId);
 		this.scheduler.execute(new MessageSenderThread(message, "MC", this));
 
-		return null;
+		return "Deleted file " + fileName;
 	}
 
 	@Override
 	public String reclaim(int space) throws RemoteException {
 		storage.reclaim(space);
 
-		return null;
+		return "Reclaimed " + space + " KBytes";
 	}
 
 	@Override
