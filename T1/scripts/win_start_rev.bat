@@ -1,7 +1,7 @@
 @echo off
-set version= %1
-set numPeers= %2
-set start = %3
+set version=%1
+set numPeers=%2
+set start=%3
 
 REM initiate peers
 for /l %%x in (%numPeers%, -1, %start%) do (
