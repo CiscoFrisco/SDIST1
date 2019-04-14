@@ -12,6 +12,6 @@ then
 fi
 
 
-gnome-terminal -x sh -c "java TestApp hello STATE"
-gnome-terminal -x sh -c "java TestApp hello RECLAIM 0"
-gnome-terminal -x sh -c "java TestApp hello $delete ~/Desktop/resumosPPIN1.pdf"
+gnome-terminal -x sh -c "java TestApp hello STATE; sleep 5"
+gnome-terminal -x sh -c "java TestApp hello RECLAIM 0; sleep 5"
+gnome-terminal -x sh -c "java TestApp hello $delete ~/Desktop/resumosPPIN1.pdf; sleep 5"
