@@ -2,33 +2,44 @@
 \contentsline {section}{\numberline {1.1}Introdu\IeC {\c c}\IeC {\~a}o}{1}
 \contentsline {paragraph}{}{1}
 \contentsline {section}{\numberline {1.2}Instru\IeC {\c c}\IeC {\~o}es de Compila\IeC {\c c}\IeC {\~a}o e Execu\IeC {\c c}\IeC {\~a}o}{2}
+\contentsline {subsection}{\numberline {1.2.1}Compila\IeC {\c c}\IeC {\~a}o}{2}
+\contentsline {paragraph}{}{2}
+\contentsline {subsection}{\numberline {1.2.2}Execu\IeC {\c c}\IeC {\~a}o}{2}
+\contentsline {paragraph}{}{2}
+\contentsline {subsubsection}{Iniciar o Registo RMI}{2}
+\contentsline {paragraph}{}{2}
+\contentsline {subsubsection}{Executar os Peers}{2}
+\contentsline {paragraph}{}{2}
 \contentsline {paragraph}{}{3}
-\contentsline {section}{\numberline {1.3}Execu\IeC {\c c}\IeC {\~a}o Concorrente de Protocolos}{3}
+\contentsline {subsubsection}{Executar a TestApp}{3}
 \contentsline {paragraph}{}{3}
-\contentsline {paragraph}{}{3}
-\contentsline {paragraph}{}{3}
+\contentsline {section}{\numberline {1.3}Execu\IeC {\c c}\IeC {\~a}o Concorrente de Protocolos}{4}
 \contentsline {paragraph}{}{4}
-\contentsline {section}{\numberline {1.4}Melhorias Implementadas}{5}
-\contentsline {subsection}{\numberline {1.4.1}Protocolo Backup}{5}
-\contentsline {subsubsection}{Melhoria Proposta}{5}
+\contentsline {paragraph}{}{4}
+\contentsline {paragraph}{}{4}
 \contentsline {paragraph}{}{5}
-\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{5}
-\contentsline {paragraph}{}{5}
-\contentsline {paragraph}{}{5}
-\contentsline {paragraph}{}{5}
-\contentsline {paragraph}{}{5}
+\contentsline {section}{\numberline {1.4}Melhorias Implementadas}{6}
+\contentsline {subsection}{\numberline {1.4.1}Protocolo Backup}{6}
+\contentsline {subsubsection}{Melhoria Proposta}{6}
+\contentsline {paragraph}{}{6}
+\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{6}
 \contentsline {paragraph}{}{6}
 \contentsline {paragraph}{}{6}
-\contentsline {subsection}{\numberline {1.4.2}Protocolo Restore}{7}
-\contentsline {subsubsection}{Melhoria Proposta}{7}
-\contentsline {paragraph}{}{7}
-\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{7}
+\contentsline {paragraph}{}{6}
+\contentsline {paragraph}{}{6}
 \contentsline {paragraph}{}{7}
 \contentsline {paragraph}{}{7}
-\contentsline {subsection}{\numberline {1.4.3}Protocolo Delete}{9}
-\contentsline {subsubsection}{Melhoria Proposta}{9}
-\contentsline {paragraph}{}{9}
-\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{9}
-\contentsline {paragraph}{}{9}
-\contentsline {paragraph}{}{9}
-\contentsline {paragraph}{}{9}
+\contentsline {subsection}{\numberline {1.4.2}Protocolo Restore}{8}
+\contentsline {subsubsection}{Melhoria Proposta}{8}
+\contentsline {paragraph}{}{8}
+\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{8}
+\contentsline {paragraph}{}{8}
+\contentsline {paragraph}{}{8}
+\contentsline {paragraph}{}{8}
+\contentsline {subsection}{\numberline {1.4.3}Protocolo Delete}{10}
+\contentsline {subsubsection}{Melhoria Proposta}{10}
+\contentsline {paragraph}{}{10}
+\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{10}
+\contentsline {paragraph}{}{10}
+\contentsline {paragraph}{}{10}
+\contentsline {paragraph}{}{10}

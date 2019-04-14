@@ -99,7 +99,69 @@ alguns dos aspetos principais da nossa implementação, nomeadamente os seguinte
 \pagebreak
 
 \section{Instruções de Compilação e Execução}
+
+\subsection{Compilação}
 \paragraph{}
+    Para compilar o trabalho desenvolvido, tanto em Windows como em Linux, apenas é 
+    necessário mudar o diretório atual para a pasta \textit{/src} e executar o seguinte
+    comando:
+    \begin{lstlisting}
+        javac *.java
+    \end{lstlisting}
+
+\subsection{Execução}
+
+\paragraph{}
+    Para executar o trabalho são necessários seguir os 3 próximos passos:
+    
+    \subsubsection{Iniciar o Registo RMI}
+    \paragraph{}
+    Visto que este trabalho implementa a interface \textit{RemoteMethodInvocation} (RMI) de
+    Java, para o testar corretamente é necessário ainda iniciar o registo RMI com:
+    \begin{lstlisting}
+        //Linux
+        rmiregistry &
+
+        //Windows
+        start rmiregistry
+    \end{lstlisting}
+    
+    \subsubsection{Executar os Peers}
+    \paragraph{}
+    O comando de execução dos \textit{peers} é o seguinte:
+    \begin{lstlisting}
+       java Peer <protocol_version> <peerID> <peer_ap> <MCaddress> <MCport> <MDBaddress> <MDBport> <MDRaddress> <MDRport>
+    \end{lstlisting}
+    \begin{itemize}
+        \item protocol\_version: Versão do protocolo compatível com o \textit{peer}.
+        \item peerID: Identificador úncico de um \textit{peer}.
+        \item peer\_ap: Ponto de acesso do objeto do RMI.
+        \item MCadress: Endereço IP do canal multicast de controlo.
+        \item MCport: Porta do canal multicast de controlo.
+        \item MDBadress: Endereço IP do canal multicast de backup.
+        \item MDBport: Porta do canal multicast de backup.
+        \item MDRadress: Endereço IP do canal multicast de restore.
+        \item MDRport: Porta do canal multicast de restore.
+    \end{itemize}
+    \paragraph{}
+        Os endereços IP multicast acima utilizados devem estar entre os valores 224.0.0.0 e
+        224.0.0.255 que são os endereços multicast reservados para redes locais.
+    
+    \subsubsection{Executar a TestApp}
+    O comando de execução da \textit{TestApp} é o seguinte:
+    \begin{lstlisting}
+        java TestApp <peer_ap> <operation> <opnd_1> <opnd_2> 
+    \end{lstlisting}
+    \begin{itemize}
+        \item preer\_ap: Ponto de acesso do \textit{peer}.
+        \item operation: Protocolo a ser executado.
+        \item opnd\_1: 
+        \item opnd\_2: 
+    \end{itemize}
+
+    \paragraph{}
+    Uma vez mais, à exceção dos scripts, todos os comandos acima deverão ser executados 
+    na pasta \textit{/src}.
 
 \pagebreak
 
@@ -108,10 +170,13 @@ alguns dos aspetos principais da nossa implementação, nomeadamente os seguinte
     De forma a garantir a execução concorrente de protocolos da melhor forma
     possível foram tomadas algumas medidas tendo em conta os seguintes fatores:
     \begin{itemize}
-        \item   Multi-threading.
-        \item  Estruturas de dados utilizadas para guardar os \textit{chunks}.
+        \item  Dentro de um protocolo há várias mensagens a serem enviadas ao mesmo tempo.
+        \item  Alguns protocolos requerem a gestão de recursos "partilhados" (recursos que
+        apesar de serem instanciados cada um no seu \textit{peer}, são iguais em todos estes e,
+        portanto, têm de ser coerentes).
+        \item  Um \textit{peer} pode ter que guardar/enviar vários chunks ao mesmo tempo.
     \end{itemize}
-
+ 
 \paragraph{}
     O primeiro passo na implementação da concorrência foi a utilização de
     \textit{threads}. Para tal decidimos utilizar a classe 
@@ -138,12 +203,19 @@ alguns dos aspetos principais da nossa implementação, nomeadamente os seguinte
         \textit{thread MesssageSenderThread} que, ao receber como parâmetros a
         mensagem a enviar, o canal por onde enviar e o peer que a envia, envia a
         mensagem para o canal respetivo. Visto que a cada nova mensagem é executada
-        uma nova \textit{thread}, é possível o envio concorrente de protocolos.
-        
+        uma nova \textit{thread}, é possível o envio concorrente de protocolos.  
         \item Sempre que um peer recebe no seu canal uma mensagem, executa uma nova
         \textit{thread} chamada \textit{MessageReceiverThread}. Esta \textit{thread}
-        , recebe os mesmo parâmetros da anterior e é responsável por interpretar 
-        que tipo de mensagem foi recebida e executar a thread respetiva. 
+        , recebe os mesmos parâmetros da anterior e é responsável por interpretar 
+        que tipo de mensagem foi recebida e executar uma nova \textit{thread} de acordo
+        com este tipo. 
+        \item Apesar de existirem muitas threads a serem executadas caso haja concorrência de
+        protocolo (ou utilizando protocolos com ficheiros maiores), uma vez que se utiliza o 
+        \textit{ScheduledThreadPoolExecutor} não há qualquer preocupação quanto a este valor
+        uma vez que ele está limitado.
+        
+        \pagebreak
+
         \begin{lstlisting}
 
 		switch (messageType) {
@@ -190,8 +262,9 @@ alguns dos aspetos principais da nossa implementação, nomeadamente os seguinte
     \textit{ConcurrentHashMap} em vez de \textit{HashMap}. A principal vantagem da
     primeira reside no facto de assegurar o correto funcionamento na presença de 
     várias \textit{threads}, algo que não é assegurado com a utilização de 
-    \textit{HashMap}.
-\pagebreak
+    \textit{HashMap}. Visto que este trabalho utiliza em grande parte o conceito de 
+    \textit{multi-threading}, esta foi a escolha óbvia a fazer.
+\pagebreak 
 
 \section{Melhorias Implementadas}
     Neste trabalho foram propostas melhorias aos protocolos BACKUP, RESTORE e 
@@ -300,6 +373,11 @@ utilizar TCP.
             \textit{CountDownLatch}. Este semáforo é utilizado para controlar
             o número de \textit{chunks} que falta restaurar.
         \end{itemize}
+        \paragraph{}
+        Esta mensagem GETCHUNK passou a enviar também o endereço IP do \textit{initiator peer} e 
+        a porta do socket instanciado por este. Desta forma, os \textit{peers} que efetuarem a 
+        comunicação via TCP conseuguem estabelecer a comunicação com o \textit{initator peer}
+        através de um socket que utilize estes atributos como argumentos.
         \item De seguida são enviadas todas as mensagens GETCHUNK de uma só vez e,
         através da chamada ao método \textit{await} da classe \textit{CountDownLatch},
         é bloqueado o \textit{initiator peer}. Este só retorna à sua execução assim
@@ -364,7 +442,7 @@ assim que estejam ativos.
     dos ficheiros a eliminar da sua classe \textit{Storage}. Este ficheiro consistiría
     numa série de linhas em que cada uma teria a seguinte estrutura:
     \begin{equation}
-        DELETE \quad \textless fileID\textgreater
+        DELETE \quad <fileID>
     \end{equation}
     Desta forma, quando um peer iniciasse a sua execução, ao percorrer este ficheiro eliminava os 
     \textit{chunks} respetivos. No entanto, foi apenas após testar nos computadores da 
