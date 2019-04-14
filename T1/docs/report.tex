@@ -39,20 +39,9 @@
   tabsize=3
 }
 
-% \renewcommand{\thesection}{\thechapter.\number\numexpr\value{section}-1\relax}
-% \renewcommand{\thesubsection}{\thesection.\number\numexpr\value{subsection}-1\relax}
-% \renewcommand{\thesubsubsection}{\thesubsection.\number\numexpr\value{subsubsection}-1\relax}
-% \setcounter{secnumdepth}{3}
-
-% \setcounter{chapter}{1}% Not using chapters, but they're used in the counters
+\setcounter{chapter}{1}% Not using chapters, but they're used in the counters
 
 \begin{document}
-
-\captionsetup[figure]{margin=1.5cm,font=small,labelfont={bf},name={Figure},labelsep=colon,textfont={it}}
-\captionsetup[table]{margin=1.5cm,font=small,labelfont={bf},name={Table},labelsep=colon,textfont={it}}
-\setlipsumdefault{1}
-
-\frontmatter
 
 \begin{titlepage}
 
@@ -64,7 +53,7 @@
 {\large Pedro Fernandes \textbf{up201603846}@fe.up.pt}\\
 {\large Francisco Filipe \textbf{up201604601}@fe.up.pt}\\[1cm]
 {\large \emph{Unidade Curricular:} Sistemas Distribuídos}\\
-{\large \emph{Docente:} They see me rolin'}\\
+{\large \emph{Docente:} Prof.Diana Guimarães}\\
 {\large \emph{Turma:} MIEIC02}\\
 {\large \emph{Grupo:} 8}\\[2cm]
 
@@ -286,6 +275,76 @@ Esta implementação deve interoperar com a versão \textit{vanilla} e também
 utilizar TCP.
 
 \subsubsection{Implementação}
+\paragraph{}
+    Na implementação deste protocolo na versão \textit{vanilla} é utilizado um
+    canal multicast para enviar os \textit{chunks} pedidos pelo
+    \textit{initiator peer}. Isto significa que todos os \textit{peers} recebem
+    os chunks, sendo que se estes últimos forem de grande tamanho diminuem a 
+    performance dos \textit{peers}. Para desenvolver uma melhoria que recebesse 
+    crédito total tivemos que pensar numa estratégia que resolvesse este 
+    problema utilizando TCP. 
+\paragraph{}
+    Tendo isto em consideração a melhoria desenvolvida baseou-se no seguinte:
+    \begin{enumerate}
+        \item Quando o \textit{initator peer} executa uma chamada ao método
+        \textit{restore} (responsável pelo envio de todas as mensagens GETCHUNK,
+        espera das mensagens CHUNK e restauro do ficheiro pedido), são iniciados:
+        \begin{itemize}
+            \item Um socket de comunicação por onde os \textit{peers} enviam os
+            chunks pedidos.
+            \item Uma nova \textit{thread} chamada \textit{TCPChunkReceiverThread}
+            que fica à escuta de novas mensagens enquanto o socket estiver
+            aberto.
+            \item Um semáforo com o valor inicial igual ao número de \textit{chunks}
+            do ficheiro. Este semáforo foi implementado utilizando a classe
+            \textit{CountDownLatch}. Este semáforo é utilizado para controlar
+            o número de \textit{chunks} que falta restaurar.
+        \end{itemize}
+        \item De seguida são enviadas todas as mensagens GETCHUNK de uma só vez e,
+        através da chamada ao método \textit{await} da classe \textit{CountDownLatch},
+        é bloqueado o \textit{initiator peer}. Este só retorna à sua execução assim
+        que o semáforo chegar a 0 e, portanto, sejam restaurados todos os 
+        \textit{chunks}.
+        \item Assim que uma mensagem GETCHUNK chega a um novo \textit{peer}, se
+        este tiver feito backup do \textit{chunk} pedido, executa uma nova
+        \textit{thread} chamada \textit{TCPChunkSenderThread} que vai enviar pelo 
+        canal TCP um inteiro que representa o número do \textit{chunk} que 
+        pretende restaurar. 
+        \item A \textit{thread TCPChunkReceiverThread} ao receber o número do 
+        \textit{chunk} verifica se este já foi previamente restaurado. De seguida
+        envia uma resposta booleana ao \textit{peer} que enviou o número do 
+        \textit{chunk} indicando se pode ou não prosseguir com o envio do 
+        \textit{chunk} em si.
+        \item Ao receber esta resposta, a \textit{thread TCPChunkSenderThread} 
+        age de acordo com a mesma. Isto é, caso indique que não deve prosseguir
+        com o restauro é terminada, senão envia pelo canal TCP a mensagem CHUNK
+        contendo o \textit{chunk} que o \textit{initiator peer} pediu.
+        \item Por fim a \textit{thread TCPChunkReceiverThread} ao receber a mensagem
+        CHUNK, separa os seus parâmetros e guarda toda a informação que lhe for útil,
+        isto é:
+        \begin{itemize}
+            \item Atualiza no \textit{ConcurrentHashMap chunkMessages} o número
+            de mensagens do tipo CHUNK que já recebeu para um determinado \textit{chunk}
+            (utilizado para prevenir o excesso de mensagens do tipo CHUNK no 
+            \textit{initiator peer}).
+            \item Guarda o conteúdo do \textit{chunk} enviado num \textit{ConcurrentHashMap} conhecido
+            como \textit{restoredFiles}. Este mapa, tal como na melhoria anterior, 
+            tem como chave uma \textit{string} que combina o ID do ficheiro com
+            o número do \textit{chunk}. O valor atribuído a cada chave é o 
+            conteúdo em bytes desse \textit{chunk}.
+            \item Assinala que restaurou mais um \textit{chunk} atualizando o 
+            valor do semáforo.
+        \end{itemize}
+        \item Este processo é cíclico desde o ponto 2 ao ponto 5 e só termina quando
+        o semáforo desbloquear o \textit{initiator peer}. Quando tal acontecer é
+        fechado o socket inicializado no ponto 1 e invocada uma função responsável
+        pela criação do ficheiro no sistema.
+        \item Assim que esta última função terminar a sua execução, o 
+        \textit{initiator peer} termina a sua execução, terminando assim o protocolo
+        RESTOREENH.
+    \end{enumerate}
+
+
 
 \pagebreak
 
@@ -299,5 +358,62 @@ DELETE deste ficheiro, estejam desligados também possam eliminar os seus chunks
 assim que estejam ativos.
 
 \subsubsection{Implementação}
+\paragraph{}
+    Numa primeira abordagem a ideia para esta implementação era criar um ficheiro
+    em todos os \textit{peers} chamado de tasks.txt com a informação necessária
+    dos ficheiros a eliminar da sua classe \textit{Storage}. Este ficheiro consistiría
+    numa série de linhas em que cada uma teria a seguinte estrutura:
+    \begin{equation}
+        DELETE \quad \textless fileID\textgreater
+    \end{equation}
+    Desta forma, quando um peer iniciasse a sua execução, ao percorrer este ficheiro eliminava os 
+    \textit{chunks} respetivos. No entanto, foi apenas após testar nos computadores da 
+    faculdade que nos apercebemos que esta solução não está corretamente implementada pois só funciona 
+    localmente.
+
+
+\paragraph{}
+    Desta forma optámos por uma outra abordagem que funcionasse em todos os casos
+    e não apenas localmente. Para isso decidimos criar mais duas mensagens de comunicação 
+    entre \textit{peers}:
+    \begin{itemize}
+        \item \textbf{ANNOUNCE:} Esta mensagem é executada sempre que um 
+        \textit{peer} começa a sua execução. Desta forma todos os \textit{peers} ativos 
+        conseguem saber quando um outro \textit{peer} é iniciado.
+        \item \textbf{ACKDELETE:} Esta mensagem é executada sempre que o protocolo DELETE
+        é executado num \textit{peer}, sinalizando aos restantes que um \textit{peer} acabou 
+        de apagar todos os \textit{chunks} de um ficheiro no seu sistema.
+    \end{itemize}
+
+\paragraph{}
+    Com estas mensagens implementadas o novo protocolo foi de acordo com a seguinte estrutura:
+    \begin{enumerate}
+        \item Quando um \textit{peer} implementa o protocolo DELETE envia uma mensagem para 
+        os restantes \textit{peers} dizendo qual o ficheiro que pretende eliminar do sistema.
+        \item Os \textit{peers} que estiverem ativos, ao receberem esta mensagem eliminam os
+        \textit{chunks} respetivos e, de seguida enviam uma mensagem do tipo ACKDELETE contendo
+        o ID do ficheiro que acabaram de eliminar. 
+        \item Esta mensagem é recebida por todos os \textit{peers} que imediatamente executam a
+        \textit{thread ReceiveAckDeleteThread}. Esta \textit{thread} está encarregue de 
+        atualizar os valores dos atributos \textit{confirmationMessages} e \textit{deleteAcks}. 
+        O primeiro consiste num mapa que a cada \textit{chunk} de um ficheiro guarda os 
+        \textit{peers} que o contêm. O segundo, também um mapa, guarda os \textit{peers} que já 
+        eliminaram um determinado ficheiro. Desta forma, apenas é necessário eliminar os 
+        \textit{peers} que executaram o protocolo DELETE do primeiro atributo e adicionar ao 
+        segundo.
+        \item Caso um \textit{peer} esteja desligado no momento em que é invocado o protocolo
+        DELETE, no momento em que este passar a estar ativo é enviada uma mensagem ANNOUNCE 
+        contendo o ID do \textit{peer} que acabou de se ligar.
+        \item Os restantes \textit{peers} ao receberem esta mensagem executam a 
+        \textit{thread ReceiveAnnounceThread} que, recorrendo ao método \textit{getTasks} 
+        verificam se o \textit{peer} que se ligou tem \textit{chunks} guardados que já foram
+        eliminados. Este método retorna um \textit{ArrayList\textless String\textgreater} 
+        contendo os IDs desses ficheiros.
+        \item Depois de obter os IDs dos ficheiros, através de um ciclo, é enviada uma 
+        mensagem DELETE que, ao ser recebida pelo \textit{peer} que acabou de se ligar, faz 
+        com que este atualize o conteúdo da sua classe \textit{Storage} eliminando os 
+        \textit{chunks} necessários.
+    \end{enumerate}
+
 
 \end{document}
