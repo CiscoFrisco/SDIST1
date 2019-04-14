@@ -2,10 +2,13 @@
 
 restore="RESTORE"
 
-if [ $1 = "true" ]; then
-    restore="RESTOREENH"
-else
+if [ $# = 1 ] && [ $1 != "true" ] 
+then
     echo "Usage: $0 [enhancement=true]"
+    exit 1
+elif [ $# = 1 ]
+then
+    restore="RESTOREENH"
 fi
 
 java TestApp hello $restore ~/Desktop/resumosPPIN1.pdf
