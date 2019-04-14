@@ -14,6 +14,37 @@
 \usepackage{lipsum}
 \usepackage{caption}
 \usepackage[portuguese]{babel}
+\usepackage{setspace}
+\usepackage{listings}
+\usepackage{color}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+% \renewcommand{\thesection}{\thechapter.\number\numexpr\value{section}-1\relax}
+% \renewcommand{\thesubsection}{\thesection.\number\numexpr\value{subsection}-1\relax}
+% \renewcommand{\thesubsubsection}{\thesubsection.\number\numexpr\value{subsubsection}-1\relax}
+% \setcounter{secnumdepth}{3}
+
+% \setcounter{chapter}{1}% Not using chapters, but they're used in the counters
 
 \begin{document}
 
@@ -30,11 +61,14 @@
 \linespread{1.2}\huge {\bfseries Serverless Distributed Backup Service}\\[1.5cm]
 \linespread{1}
 \includegraphics[width=7.5cm]{feup.png}\\[1cm]
-{\Large Pedro Fernandes \textbf{up201603846}}\\
-{\Large Francisco Filipe \textbf{up201604601}}\\[1cm]
-{\large \emph{Supervisor:} Supervisor's Name}\\
+{\large Pedro Fernandes \textbf{up201603846}@fe.up.pt}\\
+{\large Francisco Filipe \textbf{up201604601}@fe.up.pt}\\[1cm]
 {\large \emph{Unidade Curricular:} Sistemas Distribuídos}\\
-\today
+{\large \emph{Docente:} They see me rolin'}\\
+{\large \emph{Turma:} MIEIC02}\\
+{\large \emph{Grupo:} 8}\\[2cm]
+
+\large \today
 \end{center}
 
 \end{titlepage}
@@ -43,40 +77,227 @@
 % Contents, list of figures, list of tables
 % -------------------------------------------------------------------
 
+\doublespacing
 \tableofcontents
+\singlespacing
 
 % -------------------------------------------------------------------
 % Main sections (as required)
 % -------------------------------------------------------------------
 
 \mainmatter
-\section{Instruções de Compilação}
 
 \section{Introdução}
+\paragraph{}
+Este relatório foi desenvolvido no âmbito do primeiro trabalho prático da 
+Unidade Curricular de Sistemas Distribuídos. O seu objetivo é clarificar 
+alguns dos aspetos principais da nossa implementação, nomeadamente os seguintes:
+\begin{itemize}
+    \item \textbf{Instruções de Compilação e Execução:} As instruções necessárias
+    para compilar e executar corretamente o programa desenvolvido, tanto em Windows
+    como em Linux. Também está presente nesta secção a descrição dos scripts 
+    implementados, que ajudam na demonstração do trabalho.
+    \item \textbf{Execução Concorrente de Protocolos:} Descrição detalhada dos
+    mecanismos e estruturas de dados utilizadas no desenvolvimento deste trabalho, 
+    que permitem a execução concorrente dos diferentes protocolos. Esta descrição é
+    acompanhada de alguns excertos do código fonte para ajudar a compreender a 
+    implementação desenvolvida.
+    \item \textbf{Melhorias Implementadas:} Descrição de cada uma das melhorias 
+    propostas, da solução pensada e da implementação desenvolvida.
+    
+\end{itemize}     
+
+\pagebreak
+
+\section{Instruções de Compilação e Execução}
+\paragraph{}
+
+\pagebreak
 
 \section{Execução Concorrente de Protocolos}
 \paragraph{}
-De
+    De forma a garantir a execução concorrente de protocolos da melhor forma
+    possível foram tomadas algumas medidas tendo em conta os seguintes fatores:
+    \begin{itemize}
+        \item   Multi-threading.
+        \item  Estruturas de dados utilizadas para guardar os \textit{chunks}.
+    \end{itemize}
+
+\paragraph{}
+    O primeiro passo na implementação da concorrência foi a utilização de
+    \textit{threads}. Para tal decidimos utilizar a classe 
+    \textit{ScheduledThreadPoolExecutor}. Esta classe facilita bastante a 
+    implementação de \textit{multi-threading} uma vez que já implementa mecanismos
+    de baixo nível e os disponibiliza a um alto nível. Um dos aspetos que nos
+    levou a optar pelo uso desta classe foi o facto de esta reciclar 
+    \textit{threads}. A criação e destruição de \textit{threads} é um processo
+    dispendioso e, portanto, uma funcionalidade destas aumenta substancialmente a
+    performance do nosso traalho. Outro aspeto também muito importante a ter em
+    consideração foi o facto de ser possível agendar a execução de novas 
+    \textit{threads} sem comprometer a execução da \textit{thread} atual. A outra
+    alternativa a esta opção na nossa perspetiva seria o uso de 
+    \textit{Thread.sleep()}, que resultaria numa pior performance uma vez que bloqueia
+    a \textit{thread} atual.
+\paragraph{}
+    O desenho da implementação \textit{multi-threading} foi de acordo com a 
+    seguinte estrutura:
+    \begin{itemize}
+        
+        \item Quando um protocolo é invocado, o \textit{initiator peer} faz a
+        chamada à função responsável por esse protocolo. 
+        \item Em todos os protocolos (à exceção do protocolo STATE) é iniciada a 
+        \textit{thread MesssageSenderThread} que, ao receber como parâmetros a
+        mensagem a enviar, o canal por onde enviar e o peer que a envia, envia a
+        mensagem para o canal respetivo. Visto que a cada nova mensagem é executada
+        uma nova \textit{thread}, é possível o envio concorrente de protocolos.
+        
+        \item Sempre que um peer recebe no seu canal uma mensagem, executa uma nova
+        \textit{thread} chamada \textit{MessageReceiverThread}. Esta \textit{thread}
+        , recebe os mesmo parâmetros da anterior e é responsável por interpretar 
+        que tipo de mensagem foi recebida e executar a thread respetiva. 
+        \begin{lstlisting}
+
+		switch (messageType) {
+		case "PUTCHUNK":
+			peer.getScheduler().schedule(new ReceivePutChunkThread(message, length, peer), interval, TimeUnit.MILLISECONDS);
+			break;
+		case "STORED":
+			peer.getScheduler().execute(new ReceiveStoredThread(message, length, peer));
+			break;
+		case "GETCHUNK":
+			peer.getScheduler().execute(new ReceiveGetChunkThread(message, peer));
+			break;
+		case "CHUNK":
+			peer.getScheduler().execute(new ReceiveChunkThread(message, length, peer));
+			break;
+		case "DELETE":
+			peer.getScheduler().execute(new ReceiveDeleteThread(message, peer));
+			break;
+		case "ACKDELETE":
+			peer.getScheduler().execute(new ReceiveAckDeleteThread(message, peer));
+			break;
+		case "ANNOUNCE":
+			peer.getScheduler().execute(new ReceiveAnnounceThread(message, peer));
+			break;
+		case "REMOVED":
+			peer.getScheduler().execute(new ReceiveRemovedThread(message, peer));
+			break;
+		default:
+			break;
+		}
+        \end{lstlisting}
+        
+        Analisando o código fonte acima apresentado é possível verificar que para 
+        o tratamento de um chunk é executada uma nova thread, permitindo assim o
+        processamento simultâneo de vários chunks.  
+        
+        
+    \end{itemize}
+
+\paragraph{}
+    Em relação às estruturas de dados utilizadas para guardar \textit{chunks},
+    canais de comunicação e  
+    mensagens proveninentes de outros \textit{peers}, optámos pela utilização de
+    \textit{ConcurrentHashMap} em vez de \textit{HashMap}. A principal vantagem da
+    primeira reside no facto de assegurar o correto funcionamento na presença de 
+    várias \textit{threads}, algo que não é assegurado com a utilização de 
+    \textit{HashMap}.
+\pagebreak
 
 \section{Melhorias Implementadas}
+    Neste trabalho foram propostas melhorias aos protocolos BACKUP, RESTORE e 
+    DELETE. Todas elas foram implementadas com sucesso e, como tal, iremos descrever
+    nos próximos parágrafos as soluções desenvolvidas de uma forma mais detalhada. 
+
+\subsection{Protocolo Backup}
+
+\subsubsection{Melhoria Proposta}
+\paragraph{}
+Implementar uma mudança ao protocolo que previna o rápido consumo de espaço dos 
+\textit{peers}, diminue o registo de atividade quando estes estiverem cheios e 
+assegure o \textit{replication degree} desejado. Esta melhoria tem de operar
+de forma correta com o protocolo da versão \textit{vanilla}.
+
+\subsubsection{Implementação}
+\paragraph{}
+    Na versão \textit{vanilla} deste protocolo, apesar de ser garantido o 
+    \textit{replication degree}, o número de \textit{chunks} guardados nos 
+    \textit{peers} do sistema pode ser superior a este valor, visto que ele
+    guarda em todos os \textit{peers} que estejam à escuta. Isto faz com que, 
+    caso haja 100 \textit{peers} à escuta e um deles faça BACKUP de um ficheiro
+    com \textit{replication degree} de apenas 2, 99 \textit{peers} vão guardar os 
+    \textit{chunks} desse ficheiro sendo que 97 deles estão a realizar
+    trabalho desnecessário.
+\paragraph{}
+    Na melhoria deste protocolo utilizámos a nosso favor a classe \textit{Storage}
+    implementada, mais concretamente o \textit{ConcurrentHashMap confirmationMessages}.
+    Este tem como chave uma \textit{string} que combina o ID do ficheiro com o número
+    do \textit{chunk} do mesmo. O valor atribuído a cada chave é um 
+    \textit{ArrayList} de inteiros que representam o ID do \textit{peer} que 
+    enviou a mensagem STORED desse mesmo chunk após a execução do protocolo BACKUP. 
+    Assim, para saber qual o \textit{replication degree} atual de um \textit{chunk} 
+    no sistem, apenas é necessário percorrer o mapa e, quando a chave combinar, 
+    obter o número de peers que guardou o \textit{chunk} recorrendo para isso ao 
+    tamanho do \textit{ArrayList} respetivo.
+\paragraph{}
+    A implementação do protocolo \textit{vanilla} não permitia a um \textit{peer}
+    conhecer quantos chunks já tinham sido guardados no sistema. Para contornar 
+    esta adversidade foram realizadas três alterações ao protocolo:
+    \begin{itemize}
+        \item Antes de executar a \textit{thread} de tratamento de mensagens do tipo
+        PUTCHUNK, é adicionado um \textit{delay} aleatório entre 0 e 400ms.
+        \item Antes de guardar um \textit{chunk} é verificado o seu
+        \textit{replication degree} atual.
+        \item O envio da mensagem STORED é realizado antes do \textit{peer}
+        guardar o \textit{chunk} que recebeu e não após.
+    \end{itemize}
+
+\paragraph{}
+    A primeira alteração foi implementada recorrendo a um método da interface
+    \textit{ScheduledExecutorService} que permite agendar a execução de uma
+    \textit{thread}. Como são vários os \textit{peers} que vão estar a
+    tratar, paralelamente, as suas mensagens PUTCHUNK, ao agendarmos a execução
+    das \textit{thread}, minimizamos a concorrência sem comprometer a performance.
+\paragraph{}
+    Visto que é necessário garantir um determinado \textit{replication degree},
+    antes de guardar um chunk verifica-se se o seu \textit{replication degree}
+    desejado já foi atingido. Se sim, aborta-se a escrita do ficheiro. O facto de
+    a execução das threads ser agendada e a concorrência minimizada ajuda nesta 
+    verificação pois os valores do \textit{replication degree} conseguem ser mais
+    atuais do que seriam caso a execução fosse imediata.
+\paragraph{}
+    A escrita de um \textit{chunk} num peer consome algum tempo precioso. Se
+    realizarmos esta operação antes de enviar a mensagem STORED, podemos ter muitos
+    \textit{peers} a guardar um \textit{chunk} desnecessariamente pois fazem-no
+    antes de atualizar o valor do \textit{replication degree}. Ao enviar o STORED
+    primeiro, estamos a atualizar este valor e, só depois, a guardar efetivamente o
+    \textit{chunk}, conseguindo manter o valor do \textit{replication degree} o
+    mais atual possível para todos os peers. 
+ 
+\pagebreak
+
 \subsection{Protocolo Restore}
-\subsection{Porotocolo Delete}
 
+\subsubsection{Melhoria Proposta}
+\paragraph{}
+Implementar uma mudança ao protocolo de forma a que apenas o 
+\textit{initiator peer} receba os chunks enviados pelos restantes peers. 
+Esta implementação deve interoperar com a versão \textit{vanilla} e também
+utilizar TCP.
 
-% -------------------------------------------------------------------
-% Bibliography
-% -------------------------------------------------------------------
+\subsubsection{Implementação}
 
-\bibliographystyle{agsm} 
-\bibliography{mybibliography} 
+\pagebreak
 
+\subsection{Protocolo Delete}
 
-% -------------------------------------------------------------------
-% Appendices
-% -------------------------------------------------------------------
+\subsubsection{Melhoria Proposta}
+\paragraph{}
+Implementar uma mudança ao protocolo de forma a que \textit{peers} que tenham
+feito BACKUP a chunks de um ficheiro e, no momento de execução do protocolo 
+DELETE deste ficheiro, estejam desligados também possam eliminar os seus chunks 
+assim que estejam ativos.
 
-\begin{appendices}
-
-\end{appendices}
+\subsubsection{Implementação}
 
 \end{document}

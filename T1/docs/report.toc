@@ -1,0 +1,29 @@
+\babel@toc {portuguese}{}
+\contentsline {section}{\numberline {0.1}Introdu\IeC {\c c}\IeC {\~a}o}{1}
+\contentsline {paragraph}{}{1}
+\contentsline {section}{\numberline {0.2}Instru\IeC {\c c}\IeC {\~o}es de Compila\IeC {\c c}\IeC {\~a}o e Execu\IeC {\c c}\IeC {\~a}o}{2}
+\contentsline {paragraph}{}{3}
+\contentsline {section}{\numberline {0.3}Execu\IeC {\c c}\IeC {\~a}o Concorrente de Protocolos}{3}
+\contentsline {paragraph}{}{3}
+\contentsline {paragraph}{}{3}
+\contentsline {paragraph}{}{3}
+\contentsline {paragraph}{}{4}
+\contentsline {section}{\numberline {0.4}Melhorias Implementadas}{5}
+\contentsline {subsection}{\numberline {0.4.1}Protocolo Backup}{5}
+\contentsline {subsubsection}{Melhoria Proposta}{5}
+\contentsline {paragraph}{}{5}
+\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{5}
+\contentsline {paragraph}{}{5}
+\contentsline {paragraph}{}{5}
+\contentsline {paragraph}{}{5}
+\contentsline {paragraph}{}{5}
+\contentsline {paragraph}{}{6}
+\contentsline {paragraph}{}{6}
+\contentsline {subsection}{\numberline {0.4.2}Protocolo Restore}{7}
+\contentsline {subsubsection}{Melhoria Proposta}{7}
+\contentsline {paragraph}{}{7}
+\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{7}
+\contentsline {subsection}{\numberline {0.4.3}Protocolo Delete}{8}
+\contentsline {subsubsection}{Melhoria Proposta}{8}
+\contentsline {paragraph}{}{8}
+\contentsline {subsubsection}{Implementa\IeC {\c c}\IeC {\~a}o}{8}
