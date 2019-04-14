@@ -1,6 +1,7 @@
 import java.io.File;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
@@ -149,7 +150,9 @@ public class Peer implements RemoteInterface {
 		this.latch = new CountDownLatch(numChunks);
 
 		try {
-			ServerSocket serverSocket = new ServerSocket(3003);
+			int port = 3003;
+			ServerSocket serverSocket = new ServerSocket(port);
+			String ip = InetAddress.getLocalHost().getHostAddress();
 
 			if (protocol_version.equals("2.0")) {
 				this.scheduler.execute(new TCPChunkReceiverThread(this, serverSocket, fileId));
@@ -157,7 +160,12 @@ public class Peer implements RemoteInterface {
 
 			for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
 				System.out.println("crl: " + chunkNo);
-				byte[] message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
+				byte[] message;
+				if (protocol_version.equals("2.0"))
+					message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo, ip, port);
+				else
+					message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo);
+					
 				this.scheduler.execute(new MessageSenderThread(message, "MC", this));
 			}
 
@@ -252,6 +260,17 @@ public class Peer implements RemoteInterface {
 		String file = Utils.bytesToHex(fileId);
 
 		String message = "GETCHUNK " + version + " " + senderId + " " + file + " " + chunkNo + " \r\n\r\n";
+
+		return message.getBytes(StandardCharsets.US_ASCII);
+
+	}
+
+	public byte[] buildGetChunkMessage(String version, int senderId, byte[] fileId, int chunkNo, String ip, int port) {
+
+		String file = Utils.bytesToHex(fileId);
+
+		String message = "GETCHUNK " + version + " " + senderId + " " + file + " " + chunkNo + " \r\n" + ip + " " + port
+				+ " \r\n\r\n";
 
 		return message.getBytes(StandardCharsets.US_ASCII);
 

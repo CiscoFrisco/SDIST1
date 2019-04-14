@@ -6,7 +6,6 @@ import java.util.Random;
 public class Utils {
 
 	public static void main(String[] args) {
-
 	}
 
 	public static byte[] getChunkContent(byte[] message, int length) {
@@ -38,7 +37,7 @@ public class Utils {
 			}
 		}
 
-		return new String(header, StandardCharsets.US_ASCII).split(" ");
+		return new String(header, StandardCharsets.US_ASCII).split("\\s+");
 	}
 
 	public static char getCharSeparator() {

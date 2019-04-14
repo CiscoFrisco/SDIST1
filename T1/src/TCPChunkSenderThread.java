@@ -9,12 +9,12 @@ class TCPChunkSenderThread implements Runnable {
     private DataOutputStream dos;
     private DataInputStream dis;
     
-    public TCPChunkSenderThread(byte[] message, Peer peer){
+    public TCPChunkSenderThread(byte[] message, Peer peer, String ip, int port){
         this.message = message;
-        // TODO: hostname, port ?
+
         Socket client;
         try {
-            client = new Socket("localhost", 3003);
+            client = new Socket(ip, port);
             dis = new DataInputStream(client.getInputStream());
             dos = new DataOutputStream(client.getOutputStream());
         } catch (IOException e) {
