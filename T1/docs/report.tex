@@ -53,7 +53,7 @@
 {\large Pedro Fernandes \textbf{up201603846}@fe.up.pt}\\
 {\large Francisco Filipe \textbf{up201604601}@fe.up.pt}\\[1cm]
 {\large \emph{Unidade Curricular:} Sistemas Distribuídos}\\
-{\large \emph{Docente:} Prof.Diana Guimarães}\\
+{\large \emph{Docente:} Diana Guimarães}\\
 {\large \emph{Turma:} MIEIC02}\\
 {\large \emph{Grupo:} 8}\\[2cm]
 
@@ -121,7 +121,6 @@ alguns dos aspetos principais da nossa implementação, nomeadamente os seguinte
     \begin{lstlisting}
         //Linux
         rmiregistry &
-
         //Windows
         start rmiregistry
     \end{lstlisting}
@@ -143,9 +142,27 @@ alguns dos aspetos principais da nossa implementação, nomeadamente os seguinte
         \item MDRadress: Endereço IP do canal multicast de restore.
         \item MDRport: Porta do canal multicast de restore.
     \end{itemize}
-    \paragraph{}
         Os endereços IP multicast acima utilizados devem estar entre os valores 224.0.0.0 e
         224.0.0.255 que são os endereços multicast reservados para redes locais.
+    \paragraph{}
+        Dentro da pasta \textit{/scripts} existem ainda 3 scritps (1 de Linux e 2 de Windows) que
+        permitem a execuçãode vários \textit{peers} de uma só vez. Para isso só é necessário
+        executar os comandos:
+        \begin{lstlisting}
+            //Linux
+            ./start.sh <protocol_version> <num_peers> <startID>
+            //Windows
+            win_start  <protocol_version> <num_peers> <startID> //or
+            win_start_rev <protocol_version> <num_peers> <startID>
+        \end{lstlisting}
+        \begin{itemize}
+            \item protocol\_version: Versão do protocolo compatível com o \textit{peer}.
+            \item num\_peers: Número de \textit{peers} a executar.
+            \item startID: ID a partir do qual vão ser criados novos peers.
+        \end{itemize}
+        A única diferença entre os dois scripts de Windows é a ordem pela qual os Peers
+        executam. O script win\_start inicia os scripts por ID ascendente enquanto o 
+        win\_start\_rev vai iniciando por ordem descendente.
     
     \subsubsection{Executar a TestApp}
     O comando de execução da \textit{TestApp} é o seguinte:
@@ -155,13 +172,29 @@ alguns dos aspetos principais da nossa implementação, nomeadamente os seguinte
     \begin{itemize}
         \item preer\_ap: Ponto de acesso do \textit{peer}.
         \item operation: Protocolo a ser executado.
-        \item opnd\_1: 
-        \item opnd\_2: 
+        \item opnd\_1: Pode ser o diretório do ficheiro a dar BACKUP/RESTORE/DELETE ou,
+        no caso do protocolo RECLAIM, o espaço máximo de disco (em Kbytes).
+        \item opnd\_2: Utilizado no protocolos BACKUP/BACKUPENH e especifica o
+        \textit{replication degree}.
     \end{itemize}
 
     \paragraph{}
-    Uma vez mais, à exceção dos scripts, todos os comandos acima deverão ser executados 
-    na pasta \textit{/src}.
+    Tal como na execução dos \textit{peers} também aqui foram desenvolvidos scripts para
+    Windows e Linux que testam: vários protocolos BACKUP concorrentes, vários protocolos 
+    RESTORE concorrentes e vários protocolos diferentes concorrentes.
+    \begin{lstlisting}
+        //Linux
+        ./multiple_backup.sh [enhancement=true]
+        ./multiple_restore.sh [enhancement=true]
+        ./multiple_protocols.sh [enhancement=true]
+
+        //Windows
+        backup [enhancement=true]
+        restore [enhancement=true]
+        protocols [enhancement=true]
+    \end{lstlisting}
+    Este script tem um argumento opcional que, caso esteja presente,indica que os 
+    protocolos devem executar a versão melhorada.
 
 \pagebreak
 
