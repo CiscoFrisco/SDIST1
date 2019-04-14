@@ -18,7 +18,6 @@ public class MessageReceiverThread implements Runnable {
 		String messageType = new String(message);
 		messageType = messageType.substring(0, messageType.indexOf(" "));
 
-		System.out.println(messageType);
 		int interval = Utils.getRandomNumber(0, 401);
 
 		switch (messageType) {

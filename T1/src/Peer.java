@@ -33,6 +33,10 @@ public class Peer implements RemoteInterface {
 
 	private char pathSeparator;
 
+	private int port;
+
+	private ServerSocket serverSocket;
+
 	public ScheduledThreadPoolExecutor getScheduler() {
 		return scheduler;
 	}
@@ -53,6 +57,9 @@ public class Peer implements RemoteInterface {
 		this.restoredFile = null;
 
 		this.scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(300);
+		
+		this.port = 3000 + peerID;
+		this.serverSocket = new ServerSocket(port);
 
 		if (new File("peer" + peerID).exists()) {
 			this.storage = Storage.readStorage("peer", this);
@@ -150,8 +157,6 @@ public class Peer implements RemoteInterface {
 		this.latch = new CountDownLatch(numChunks);
 
 		try {
-			int port = 3003;
-			ServerSocket serverSocket = new ServerSocket(port);
 			String ip = InetAddress.getLocalHost().getHostAddress();
 
 			if (protocol_version.equals("2.0")) {
@@ -159,7 +164,6 @@ public class Peer implements RemoteInterface {
 			}
 
 			for (int chunkNo = 0; chunkNo < numChunks; chunkNo++) {
-				System.out.println("crl: " + chunkNo);
 				byte[] message;
 				if (protocol_version.equals("2.0"))
 					message = buildGetChunkMessage(protocol_version, peerID, fileId, chunkNo, ip, port);
@@ -171,9 +175,6 @@ public class Peer implements RemoteInterface {
 
 			try {
 				this.latch.await();
-				if (protocol_version.equals("2.0"))
-					serverSocket.close();
-				System.out.println("Socket closed");
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

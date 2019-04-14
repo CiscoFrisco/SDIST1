@@ -25,7 +25,6 @@ public class ReceivePutChunkThread implements Runnable {
 			return;
 		}
 
-		System.out.println("conf: " + storage.getNumConfirmationMessages(fileId, chunkNo));
 		if (peer.getVersion().equals("2.0") && storage.getNumConfirmationMessages(fileId, chunkNo) >= replicationDegree) {
 			return;
 		}

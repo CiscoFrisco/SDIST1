@@ -134,7 +134,6 @@ public class Storage {
 			BufferedOutputStream bos = new BufferedOutputStream(fos);
 
 			for (Map.Entry<Integer, byte[]> chunk : chunks.entrySet()) {
-				System.out.println("num: " + chunk.getKey());
 				bos.write(chunk.getValue());
 			}
 
@@ -340,7 +339,7 @@ public class Storage {
 		capacity = space * 1000;
 
 		int spaceToReclaim = getUsedSpace() - capacity;
-		System.out.println("begin: " + spaceToReclaim);
+
 		if (spaceToReclaim <= 0)
 			return;
 
@@ -357,10 +356,7 @@ public class Storage {
 			this.peer.getScheduler().execute(new MessageSenderThread(message, "MC", this.peer));
 
 			spaceToReclaim -= chunk.getBufferSize();
-			System.out.println(spaceToReclaim);
 		}
-
-		System.out.println("end: " + spaceToReclaim);
 	}
 
 	public boolean isAvailable() {
@@ -394,9 +390,8 @@ public class Storage {
 			if(entry.getValue().contains(peerId)){
 				String fileId = entry.getKey().substring(0, entry.getKey().indexOf('-'));
 				for(Map.Entry<String, ArrayList<Integer>> entry2 : deleteAcks.entrySet()){
-					System.out.println(entry2.getKey());
+
 					if(entry2.getKey().equals(fileId) && !entry2.getValue().contains(peerId)){
-						System.out.println("yo");
 						deleteTasks.add(fileId);
 						break;
 					}

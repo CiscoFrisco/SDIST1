@@ -16,8 +16,6 @@ class ReceiveAckDeleteThread implements Runnable {
 
         int senderId = Integer.parseInt(header[2]);
 
-        System.out.println(header[4] + "-" + senderId);
-
         if (peer.getId() == Integer.parseInt(header[3]))
             peer.getStorage().addAckMesssage(header[4], senderId);
 

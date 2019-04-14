@@ -34,7 +34,6 @@ public class ReceiveGetChunkThread implements Runnable {
 			}
 
 			if (!peer.getVersion().equals("1.0")) {
-				System.out.println("ip: " + header[5] + " port " + Integer.parseInt(header[6]));
 				peer.getScheduler().schedule(new TCPChunkSenderThread(msg, peer, header[5], Integer.parseInt(header[6])), waitTime, TimeUnit.MILLISECONDS);
 			} else {
 				peer.getScheduler().schedule(new MessageSenderThread(msg, "MDR", peer), waitTime,

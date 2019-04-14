@@ -11,7 +11,7 @@ then
     backup="BACKUPENH"
 fi
 
-gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/resumosPPIN1.pdf 2"
-gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/iron_man.jpg 2"
-gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/a6.pdf 2"
-gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/C\ book\ 1.pdf 2"
+gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/resumosPPIN1.pdf 3"
+gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/iron_man.jpg 3"
+gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/a6.pdf 3"
+gnome-terminal -x sh -c "java TestApp hello $backup ~/Desktop/C\ book\ 1.pdf 3"
