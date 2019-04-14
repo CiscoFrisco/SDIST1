@@ -12,6 +12,6 @@ then
 fi
 
 
-java TestApp hello STATE
-java TestApp hello RECLAIM 0
-java TestApp hello $delete ~/Desktop/resumosPPIN1.pdf
+gnome-terminal -x sh -c "java TestApp hello STATE"
+gnome-terminal -x sh -c "java TestApp hello RECLAIM 0"
+gnome-terminal -x sh -c "java TestApp hello $delete ~/Desktop/resumosPPIN1.pdf"

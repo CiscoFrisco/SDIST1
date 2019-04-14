@@ -11,7 +11,7 @@ then
     restore="RESTOREENH"
 fi
 
-java TestApp hello $restore ~/Desktop/resumosPPIN1.pdf
-java TestApp hello $restore ~/Desktop/iron_man.jpg
-java TestApp hello $restore ~/Desktop/a6.pdf
-java TestApp hello $restore ~/Desktop/C\ book\ 1.pdf
+gnome-terminal -x sh -c "java TestApp hello $restore ~/Desktop/resumosPPIN1.pdf"
+gnome-terminal -x sh -c "java TestApp hello $restore ~/Desktop/iron_man.jpg"
+gnome-terminal -x sh -c "java TestApp hello $restore ~/Desktop/a6.pdf"
+gnome-terminal -x sh -c "java TestApp hello $restore ~/Desktop/C\ book\ 1.pdf"
